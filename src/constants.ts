@@ -1,5 +1,7 @@
 import type { SummaryItem, DayPlan } from './types';
 
+export const ADMIN_EMAILS = ['khomchan.jongdee@gmail.com', 'littlechuindy@gmail.com'];
+
 export const TRIP_BLUEPRINT: { summary: SummaryItem[]; days: DayPlan[] } = {
   summary: [
     { id: 's1', title: "ตั๋วเครื่องบิน (Ticket)", jpy: 0, thb: 35670, type: "flight", desc: "BKK ➔ NRT (ไป-กลับ)" },

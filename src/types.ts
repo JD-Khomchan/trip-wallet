@@ -29,3 +29,8 @@ export interface UserState {
 }
 
 export type TabId = 'summary' | string;
+
+export interface TripBlueprint {
+  summary: SummaryItem[];
+  days: DayPlan[];
+}

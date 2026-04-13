@@ -9,8 +9,9 @@ import Tabs from './components/Tabs';
 import TripCard from './components/TripCard';
 import ExtraModal from './components/ExtraModal';
 import BottomNav from './components/BottomNav';
-import { TRIP_BLUEPRINT } from './constants';
-import type { UserState, TabId, DayItem } from './types';
+import ManagePlan from './components/ManagePlan';
+import { TRIP_BLUEPRINT, ADMIN_EMAILS } from './constants';
+import type { UserState, TabId, DayItem, TripBlueprint } from './types';
 import './index.css';
 
 function App() {
@@ -18,30 +19,44 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [userState, setUserState] = useState<UserState>({ planned: {}, extras: [] });
+  const [tripPlan, setTripPlan] = useState<TripBlueprint | null>(null);
+  const [showManage, setShowManage] = useState(false);
   const [currentTab, setCurrentTab] = useState<TabId>('summary');
   const [isExtraModalOpen, setIsExtraModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Auth listener + load data from Firestore
+  const isAdmin = ADMIN_EMAILS.includes(user?.email || '');
+
+  // Auth listener + load data
   useEffect(() => {
     return onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const snapshot = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (snapshot.exists()) {
-          setUserState(snapshot.data() as UserState);
+        // Load user state
+        const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (userSnap.exists()) setUserState(userSnap.data() as UserState);
+
+        // Load shared plan
+        const planSnap = await getDoc(doc(db, 'trips', 'main'));
+        if (planSnap.exists()) {
+          setTripPlan(planSnap.data() as TripBlueprint);
+        } else {
+          await setDoc(doc(db, 'trips', 'main'), TRIP_BLUEPRINT);
+          setTripPlan(TRIP_BLUEPRINT);
         }
+
         setDataLoaded(true);
       } else {
         setDataLoaded(false);
+        setTripPlan(null);
         setUserState({ planned: {}, extras: [] });
       }
       setAuthLoading(false);
     });
   }, []);
 
-  // Save to Firestore on state change (debounced)
+  // Save user state to Firestore (debounced)
   useEffect(() => {
     if (!user || !dataLoaded) return;
     clearTimeout(saveTimeout.current);
@@ -64,31 +79,25 @@ function App() {
 
   // Dashboard Calculations
   const { planTotal, actualTotal } = useMemo(() => {
-    let p = 0;
-    let a = 0;
+    if (!tripPlan) return { planTotal: 0, actualTotal: 0 };
+    let p = 0, a = 0;
 
-    TRIP_BLUEPRINT.summary.forEach(item => {
+    tripPlan.summary.forEach(item => {
       p += item.thb;
-      if (userState.planned[item.id]?.paid) {
-        a += userState.planned[item.id].actual;
-      }
+      if (userState.planned[item.id]?.paid) a += userState.planned[item.id].actual;
     });
 
-    TRIP_BLUEPRINT.days.forEach(day => {
+    tripPlan.days.forEach(day => {
       day.items.forEach(item => {
         p += item.thb;
-        if (userState.planned[item.id]?.paid) {
-          a += userState.planned[item.id].actual;
-        }
+        if (userState.planned[item.id]?.paid) a += userState.planned[item.id].actual;
       });
     });
 
-    userState.extras.forEach(ex => {
-      a += ex.thb;
-    });
+    userState.extras.forEach(ex => { a += ex.thb; });
 
     return { planTotal: p, actualTotal: a };
-  }, [userState]);
+  }, [userState, tripPlan]);
 
   // Handlers
   const handleReset = () => {
@@ -97,89 +106,65 @@ function App() {
     }
   };
 
-  const handleLogout = () => signOut(auth);
+  const handlePlanUpdate = async (updated: TripBlueprint) => {
+    setTripPlan(updated);
+    await setDoc(doc(db, 'trips', 'main'), updated);
+  };
 
   const togglePaid = (id: string, initialPrice: number) => {
     setUserState(prev => {
       const current = prev.planned[id] || { paid: false, actual: initialPrice };
-      return {
-        ...prev,
-        planned: {
-          ...prev.planned,
-          [id]: { ...current, paid: !current.paid }
-        }
-      };
+      return { ...prev, planned: { ...prev.planned, [id]: { ...current, paid: !current.paid } } };
     });
   };
 
   const handlePriceChange = (id: string, price: number) => {
     setUserState(prev => ({
       ...prev,
-      planned: {
-        ...prev.planned,
-        [id]: { ...(prev.planned[id] || { paid: true }), actual: price }
-      }
+      planned: { ...prev.planned, [id]: { ...(prev.planned[id] || { paid: true }), actual: price } }
     }));
   };
 
   const handleAddExtra = (item: Omit<DayItem, 'id' | 'isExtra'>) => {
-    const day = currentTab === 'summary' ? TRIP_BLUEPRINT.days[0].date : currentTab;
-    const newExtra: DayItem = {
-      ...item,
-      id: 'ex_' + Date.now(),
-      isExtra: true,
-      day: day,
-    } as any;
-
-    setUserState(prev => ({
-      ...prev,
-      extras: [...prev.extras, newExtra]
-    }));
+    const day = currentTab === 'summary' ? tripPlan?.days[0].date : currentTab;
+    const newExtra: DayItem = { ...item, id: 'ex_' + Date.now(), isExtra: true, day } as any;
+    setUserState(prev => ({ ...prev, extras: [...prev.extras, newExtra] }));
   };
 
   const handleDeleteExtra = (id: string) => {
     if (confirm('Delete?')) {
-      setUserState(prev => ({
-        ...prev,
-        extras: prev.extras.filter(e => e.id !== id)
-      }));
+      setUserState(prev => ({ ...prev, extras: prev.extras.filter(e => e.id !== id) }));
     }
   };
 
   const getTimeStatus = (itemTime: string) => {
     const now = new Date();
-    const [hNow, mNow] = [now.getHours(), now.getMinutes()];
-    const [hItem, mItem] = itemTime.split(':').map(Number);
-    const timeNow = hNow * 60 + mNow;
-    const timeItem = hItem * 60 + mItem;
+    const timeNow = now.getHours() * 60 + now.getMinutes();
+    const [h, m] = itemTime.split(':').map(Number);
+    const timeItem = h * 60 + m;
     if (timeNow > timeItem + 30) return 'past';
     if (timeNow >= timeItem - 15 && timeNow <= timeItem + 30) return 'current';
     return 'future';
   };
 
-  const dayDates = TRIP_BLUEPRINT.days.map(d => d.date);
-
   const renderContent = () => {
+    if (!tripPlan) return null;
+
     if (currentTab === 'summary') {
       return (
         <div className="card-enter">
           <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 px-2">Fixed Expenses</h3>
-          {TRIP_BLUEPRINT.summary.map(item => (
-            <TripCard
-              key={item.id}
-              {...item}
-              isTimeline={false}
+          {tripPlan.summary.map(item => (
+            <TripCard key={item.id} {...item} isTimeline={false}
               paid={userState.planned[item.id]?.paid || false}
               actual={userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : item.thb}
-              onTogglePaid={togglePaid}
-              onPriceChange={handlePriceChange}
-            />
+              onTogglePaid={togglePaid} onPriceChange={handlePriceChange} />
           ))}
         </div>
       );
     }
 
-    const dayPlan = TRIP_BLUEPRINT.days.find(d => d.date === currentTab)?.items || [];
+    const dayPlan = tripPlan.days.find(d => d.date === currentTab)?.items || [];
     const dayExtras = userState.extras.filter((e: any) => e.day === currentTab);
     const combined = [...dayPlan.map(i => ({ ...i, isExtra: false })), ...dayExtras].sort((a, b) => a.time.localeCompare(b.time));
     const hasPast = combined.some(i => getTimeStatus(i.time) === 'past');
@@ -188,25 +173,18 @@ function App() {
       <div className="relative">
         <div className={`timeline-line ${hasPast ? 'line-past' : ''}`}></div>
         {combined.map(item => (
-          <TripCard
-            key={item.id}
-            {...item}
-            isTimeline={true}
+          <TripCard key={item.id} {...item} isTimeline={true}
             status={getTimeStatus(item.time)}
             paid={userState.planned[item.id]?.paid || false}
             actual={userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : item.thb}
-            onTogglePaid={togglePaid}
-            onPriceChange={handlePriceChange}
-            onDelete={handleDeleteExtra}
-            isExtra={item.isExtra}
-          />
+            onTogglePaid={togglePaid} onPriceChange={handlePriceChange}
+            onDelete={handleDeleteExtra} isExtra={item.isExtra} />
         ))}
       </div>
     );
   };
 
-  // Loading screen
-  if (authLoading) {
+  if (authLoading || (user && !tripPlan)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-400 text-sm">Loading...</div>
@@ -214,7 +192,6 @@ function App() {
     );
   }
 
-  // Login screen
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4">
@@ -225,10 +202,8 @@ function App() {
           <h1 className="font-headline font-extrabold text-2xl text-secondary">Trip Wallet</h1>
           <p className="text-gray-400 text-sm mt-1">Japan May 2026</p>
         </div>
-        <button
-          onClick={() => signInWithPopup(auth, googleProvider)}
-          className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-6 py-3 shadow-sm hover:shadow-md transition-shadow font-semibold text-gray-700"
-        >
+        <button onClick={() => signInWithPopup(auth, googleProvider)}
+          className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-6 py-3 shadow-sm hover:shadow-md transition-shadow font-semibold text-gray-700">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" />
           Sign in with Google
         </button>
@@ -236,35 +211,24 @@ function App() {
     );
   }
 
+  if (showManage && isAdmin && tripPlan) {
+    return <ManagePlan plan={tripPlan} onBack={() => setShowManage(false)} onPlanUpdate={handlePlanUpdate} />;
+  }
+
   return (
     <div className="min-h-screen pb-32">
-      <Header onReset={handleReset} currentTime={currentTime} user={user} onLogout={handleLogout} />
+      <Header onReset={handleReset} currentTime={currentTime} user={user}
+        onLogout={() => signOut(auth)}
+        isAdmin={isAdmin} onManage={() => setShowManage(true)} />
 
       <main className="pt-20 max-w-xl mx-auto px-4">
         <Dashboard planTotal={planTotal} actualTotal={actualTotal} />
-
-        <Tabs
-          activeTab={currentTab}
-          onTabChange={setCurrentTab}
-          dayDates={dayDates}
-        />
-
-        <div id="content" className="min-h-[400px]">
-          {renderContent()}
-        </div>
+        <Tabs activeTab={currentTab} onTabChange={setCurrentTab} dayDates={tripPlan?.days.map(d => d.date) ?? []} />
+        <div id="content" className="min-h-[400px]">{renderContent()}</div>
       </main>
 
-      <BottomNav
-        activeTab={currentTab}
-        onTabChange={setCurrentTab}
-        onOpenExtra={() => setIsExtraModalOpen(true)}
-      />
-
-      <ExtraModal
-        isOpen={isExtraModalOpen}
-        onClose={() => setIsExtraModalOpen(false)}
-        onSubmit={handleAddExtra}
-      />
+      <BottomNav activeTab={currentTab} onTabChange={setCurrentTab} onOpenExtra={() => setIsExtraModalOpen(true)} />
+      <ExtraModal isOpen={isExtraModalOpen} onClose={() => setIsExtraModalOpen(false)} onSubmit={handleAddExtra} />
     </div>
   );
 }
