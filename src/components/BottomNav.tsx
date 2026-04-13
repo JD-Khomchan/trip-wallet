@@ -9,7 +9,8 @@ interface BottomNavProps {
 
 const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, onOpenExtra }) => {
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-40 px-6 pb-8 pt-4 bg-gradient-to-t from-surface via-surface to-transparent pointer-events-none">
+    <nav className="fixed bottom-0 left-0 w-full z-40 px-6 pt-4 bg-gradient-to-t from-surface via-surface to-transparent pointer-events-none"
+      style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
       <div className="max-w-sm mx-auto bg-white/80 backdrop-blur-2xl rounded-pill shadow-2xl border border-white/50 p-2 flex justify-between items-center pointer-events-auto">
         <button 
           onClick={() => onTabChange('summary')}

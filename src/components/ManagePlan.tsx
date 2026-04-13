@@ -191,7 +191,9 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={closeForm}>
-          <div className="bg-white w-full max-w-xl rounded-t-3xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-xl rounded-t-3xl p-6 space-y-4 overflow-y-auto max-h-[90vh]"
+        style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+        onClick={e => e.stopPropagation()}>
             <h2 className="font-headline font-extrabold text-lg text-secondary">
               {isNew ? 'Add Item' : 'Edit Item'}
             </h2>
@@ -201,7 +203,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
                 <label className="text-xs font-bold text-gray-500">Time</label>
                 <input type="time" value={form.time}
                   onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
-                  className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+                  className="w-full mt-1 border rounded-xl px-3 py-2 text-base" />
               </div>
             )}
 
@@ -209,7 +211,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
               <label className="text-xs font-bold text-gray-500">Title *</label>
               <input type="text" value={form.title} placeholder="ชื่อรายการ"
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+                className="w-full mt-1 border rounded-xl px-3 py-2 text-base" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -217,20 +219,20 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
                 <label className="text-xs font-bold text-gray-500">JPY</label>
                 <input type="number" value={form.jpy || ''}
                   onChange={e => setForm(f => ({ ...f, jpy: Number(e.target.value) }))}
-                  className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+                  className="w-full mt-1 border rounded-xl px-3 py-2 text-base" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500">THB *</label>
                 <input type="number" value={form.thb || ''}
                   onChange={e => setForm(f => ({ ...f, thb: Number(e.target.value) }))}
-                  className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+                  className="w-full mt-1 border rounded-xl px-3 py-2 text-base" />
               </div>
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-500">Type</label>
               <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                className="w-full mt-1 border rounded-xl px-3 py-2 text-sm">
+                className="w-full mt-1 border rounded-xl px-3 py-2 text-base">
                 {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
@@ -239,28 +241,28 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
               <label className="text-xs font-bold text-gray-500">Description</label>
               <input type="text" value={form.desc} placeholder="รายละเอียด (ไม่บังคับ)"
                 onChange={e => setForm(f => ({ ...f, desc: e.target.value }))}
-                className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+                className="w-full mt-1 border rounded-xl px-3 py-2 text-base" />
             </div>
 
                     <div>
               <label className="text-xs font-bold text-gray-500">Image URL</label>
               <input type="url" value={form.image} placeholder="https://..."
                 onChange={e => setForm(f => ({ ...f, image: e.target.value }))}
-                className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+                className="w-full mt-1 border rounded-xl px-3 py-2 text-base" />
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-500">Google Maps URL</label>
               <input type="url" value={form.mapUrl} placeholder="https://maps.google.com/..."
                 onChange={e => setForm(f => ({ ...f, mapUrl: e.target.value }))}
-                className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+                className="w-full mt-1 border rounded-xl px-3 py-2 text-base" />
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-500">Guide (คั่นด้วย &gt;)</label>
               <input type="text" value={form.guide} placeholder="T3 > Monorail > Hamamatsucho > Yamanote > Shinjuku"
                 onChange={e => setForm(f => ({ ...f, guide: e.target.value }))}
-                className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+                className="w-full mt-1 border rounded-xl px-3 py-2 text-base" />
             </div>
 
             <div className="flex gap-3 pt-2">

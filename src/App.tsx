@@ -226,12 +226,12 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen pb-32">
+    <div className="min-h-screen" style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}>
       <Header onReset={handleReset} currentTime={currentTime} user={user}
         onLogout={() => signOut(auth)}
         isAdmin={isAdmin} onManage={() => setShowManage(true)} />
 
-      <main className="pt-20 max-w-xl mx-auto px-4">
+      <main className="pt-16 max-w-xl mx-auto px-4" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
         <Dashboard planTotal={planTotal} actualTotal={actualTotal} />
         <Tabs activeTab={currentTab} onTabChange={setCurrentTab} dayDates={tripPlan?.days.map(d => d.date) ?? []} />
         <div id="content" className="min-h-[400px]">{renderContent()}</div>
