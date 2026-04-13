@@ -10,7 +10,7 @@ import TripCard from './components/TripCard';
 import ExtraModal from './components/ExtraModal';
 import BottomNav from './components/BottomNav';
 import ManagePlan from './components/ManagePlan';
-import { TRIP_BLUEPRINT, ADMIN_EMAILS } from './constants';
+import { TRIP_BLUEPRINT } from './constants';
 import type { UserState, TabId, DayItem, TripBlueprint } from './types';
 import './index.css';
 
@@ -20,13 +20,14 @@ function App() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [userState, setUserState] = useState<UserState>({ planned: {}, extras: [] });
   const [tripPlan, setTripPlan] = useState<TripBlueprint | null>(null);
+  const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const [showManage, setShowManage] = useState(false);
   const [currentTab, setCurrentTab] = useState<TabId>('summary');
   const [isExtraModalOpen, setIsExtraModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const isAdmin = ADMIN_EMAILS.includes(user?.email || '');
+  const isAdmin = adminEmails.includes(user?.email || '');
 
   // Auth listener + load data
   useEffect(() => {
@@ -36,6 +37,10 @@ function App() {
         // Load user state
         const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
         if (userSnap.exists()) setUserState(userSnap.data() as UserState);
+
+        // Load admin list
+        const adminSnap = await getDoc(doc(db, 'config', 'admins'));
+        if (adminSnap.exists()) setAdminEmails(adminSnap.data().emails || []);
 
         // Load shared plan
         const planSnap = await getDoc(doc(db, 'trips', 'main'));

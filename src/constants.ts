@@ -1,6 +1,5 @@
 import type { SummaryItem, DayPlan } from './types';
 
-export const ADMIN_EMAILS = ['khomchan.jongdee@gmail.com', 'littlechuindy@gmail.com'];
 
 export const TRIP_BLUEPRINT: { summary: SummaryItem[]; days: DayPlan[] } = {
   summary: [
