@@ -5,6 +5,9 @@ export interface SummaryItem {
   thb: number;
   type: string;
   desc?: string;
+  image?: string;
+  mapUrl?: string;
+  guide?: string;
 }
 
 export interface DayItem {
@@ -16,6 +19,9 @@ export interface DayItem {
   type: string;
   desc?: string;
   isExtra?: boolean;
+  image?: string;
+  mapUrl?: string;
+  guide?: string;
 }
 
 export interface DayPlan {

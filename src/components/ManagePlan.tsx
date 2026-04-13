@@ -12,7 +12,7 @@ type ActiveTab = 'summary' | string;
 
 const TYPES = ['transport', 'flight', 'hotel', 'food', 'car', 'activity', 'other'];
 
-const emptyItem = { title: '', jpy: 0, thb: 0, type: 'transport', desc: '', time: '09:00' };
+const emptyItem = { title: '', jpy: 0, thb: 0, type: 'transport', desc: '', time: '09:00', image: '', mapUrl: '', guide: '' };
 
 const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('summary');
@@ -37,6 +37,9 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
       type: item.type,
       desc: item.desc || '',
       time: (item as DayItem).time || '09:00',
+      image: item.image || '',
+      mapUrl: item.mapUrl || '',
+      guide: item.guide || '',
     });
     setIsNew(false);
     setShowForm(true);
@@ -53,7 +56,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
     if (activeTab === 'summary') {
       let updatedSummary: SummaryItem[];
       if (isNew) {
-        const newItem: SummaryItem = { id: 's_' + Date.now(), title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc };
+        const newItem: SummaryItem = { id: 's_' + Date.now(), title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image || undefined, mapUrl: form.mapUrl || undefined, guide: form.guide || undefined };
         updatedSummary = [...plan.summary, newItem];
       } else {
         updatedSummary = plan.summary.map(i => i.id === editing?.id ? { ...i, ...form } : i);
@@ -64,7 +67,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
         if (day.date !== activeTab) return day;
         let updatedItems: DayItem[];
         if (isNew) {
-          const newItem: DayItem = { id: 'd_' + Date.now(), time: form.time, title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc };
+          const newItem: DayItem = { id: 'd_' + Date.now(), time: form.time, title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image || undefined, mapUrl: form.mapUrl || undefined, guide: form.guide || undefined };
           updatedItems = [...day.items, newItem].sort((a, b) => a.time.localeCompare(b.time));
         } else {
           updatedItems = day.items.map(i => i.id === editing?.id ? { ...i, ...form, time: form.time } : i);
@@ -236,6 +239,27 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
               <label className="text-xs font-bold text-gray-500">Description</label>
               <input type="text" value={form.desc} placeholder="รายละเอียด (ไม่บังคับ)"
                 onChange={e => setForm(f => ({ ...f, desc: e.target.value }))}
+                className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+            </div>
+
+                    <div>
+              <label className="text-xs font-bold text-gray-500">Image URL</label>
+              <input type="url" value={form.image} placeholder="https://..."
+                onChange={e => setForm(f => ({ ...f, image: e.target.value }))}
+                className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-500">Google Maps URL</label>
+              <input type="url" value={form.mapUrl} placeholder="https://maps.google.com/..."
+                onChange={e => setForm(f => ({ ...f, mapUrl: e.target.value }))}
+                className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-500">Guide (คั่นด้วย &gt;)</label>
+              <input type="text" value={form.guide} placeholder="T3 > Monorail > Hamamatsucho > Yamanote > Shinjuku"
+                onChange={e => setForm(f => ({ ...f, guide: e.target.value }))}
                 className="w-full mt-1 border rounded-xl px-3 py-2 text-sm" />
             </div>
 
