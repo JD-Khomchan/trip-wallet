@@ -113,7 +113,12 @@ function App() {
 
   const handlePlanUpdate = async (updated: TripBlueprint) => {
     setTripPlan(updated);
-    await setDoc(doc(db, 'trips', 'main'), updated);
+    try {
+      await setDoc(doc(db, 'trips', 'main'), JSON.parse(JSON.stringify(updated)));
+    } catch (err) {
+      console.error('Save plan failed:', err);
+      alert('บันทึกไม่สำเร็จ: ' + (err as Error).message);
+    }
   };
 
   const togglePaid = (id: string, initialPrice: number) => {

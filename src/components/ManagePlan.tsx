@@ -56,10 +56,10 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
     if (activeTab === 'summary') {
       let updatedSummary: SummaryItem[];
       if (isNew) {
-        const newItem: SummaryItem = { id: 's_' + Date.now(), title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image || undefined, mapUrl: form.mapUrl || undefined, guide: form.guide || undefined };
+        const newItem: SummaryItem = { id: 's_' + Date.now(), title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image || '', mapUrl: form.mapUrl || '', guide: form.guide || '' };
         updatedSummary = [...plan.summary, newItem];
       } else {
-        updatedSummary = plan.summary.map(i => i.id === editing?.id ? { ...i, ...form } : i);
+        updatedSummary = plan.summary.map(i => i.id === editing?.id ? { ...i, title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image || '', mapUrl: form.mapUrl || '', guide: form.guide || '' } : i);
       }
       onPlanUpdate({ ...plan, summary: updatedSummary });
     } else {
@@ -67,10 +67,10 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
         if (day.date !== activeTab) return day;
         let updatedItems: DayItem[];
         if (isNew) {
-          const newItem: DayItem = { id: 'd_' + Date.now(), time: form.time, title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image || undefined, mapUrl: form.mapUrl || undefined, guide: form.guide || undefined };
+          const newItem: DayItem = { id: 'd_' + Date.now(), time: form.time, title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image || '', mapUrl: form.mapUrl || '', guide: form.guide || '' };
           updatedItems = [...day.items, newItem].sort((a, b) => a.time.localeCompare(b.time));
         } else {
-          updatedItems = day.items.map(i => i.id === editing?.id ? { ...i, ...form, time: form.time } : i);
+          updatedItems = day.items.map(i => i.id === editing?.id ? { ...i, time: form.time, title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image || '', mapUrl: form.mapUrl || '', guide: form.guide || '' } : i);
         }
         return { ...day, items: updatedItems };
       });
