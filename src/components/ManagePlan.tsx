@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { TripBlueprint, SummaryItem, ScheduleItem, PlanMain } from '../types';
-import { getIcon } from '../constants';
+import { getIcon, TRIP_BLUEPRINT } from '../constants';
 
 interface ManagePlanProps {
   plan: TripBlueprint;
@@ -170,10 +170,16 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
             </button>
             <h1 className="font-headline font-extrabold text-xl tracking-tight text-secondary">Manage Plan</h1>
           </div>
-          <button onClick={openAdd}
-            className="flex items-center gap-1 bg-primary text-white text-sm font-bold px-4 py-2 rounded-xl shadow">
-            <span className="material-symbols-outlined text-sm">add</span> Add
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => { if (confirm('โหลด Template ใหม่? ข้อมูลปัจจุบันจะถูกแทนที่ทั้งหมด')) onPlanUpdate(TRIP_BLUEPRINT); }}
+              className="flex items-center gap-1 bg-gray-100 text-gray-500 text-sm font-bold px-3 py-2 rounded-xl">
+              <span className="material-symbols-outlined text-sm">restore</span>
+            </button>
+            <button onClick={openAdd}
+              className="flex items-center gap-1 bg-primary text-white text-sm font-bold px-4 py-2 rounded-xl shadow">
+              <span className="material-symbols-outlined text-sm">add</span> Add
+            </button>
+          </div>
         </div>
       </header>
 
