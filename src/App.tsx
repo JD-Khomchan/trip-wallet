@@ -116,7 +116,7 @@ function App() {
       });
     });
 
-    userState.extras.forEach(ex => { a += ex.thb; });
+    (userState.extras || []).forEach(ex => { a += ex.thb; });
 
     return { planTotal: p, actualTotal: a };
   }, [userState, tripPlan]);
@@ -191,11 +191,11 @@ function App() {
       );
     }
 
-    const planMain = tripPlan.planMains.find(pm => pm.id === currentTab);
+    const planMain = (tripPlan.planMains || []).find(pm => pm.id === currentTab);
     if (!planMain) return null;
 
-    const scheduleItems = planMain.schedules.map(i => ({ ...i, isExtra: false as const }));
-    const extraItems = userState.extras
+    const scheduleItems = (planMain.schedules || []).map(i => ({ ...i, isExtra: false as const }));
+    const extraItems = (userState.extras || [])
       .filter(e => e.planMainId === currentTab)
       .map(e => ({ ...e, isExtra: true as const }));
     const combined = [...scheduleItems, ...extraItems].sort((a, b) => a.time.localeCompare(b.time));
