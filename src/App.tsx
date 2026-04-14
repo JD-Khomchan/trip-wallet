@@ -5,12 +5,12 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
-import Tabs from './components/Tabs';
 import TripCard from './components/TripCard';
 import ExtraModal from './components/ExtraModal';
 import BottomNav from './components/BottomNav';
 import ManagePlan from './components/ManagePlan';
 import { TRIP_BLUEPRINT } from './constants';
+import { getDayStatus, getItemStatus, getAutoTab } from './utils';
 import type { UserState, TabId, ExtraItem, TripBlueprint } from './types';
 import './index.css';
 
@@ -62,10 +62,12 @@ function App() {
             setTripPlan(migrated);
           } else {
             setTripPlan(raw as TripBlueprint);
+            setCurrentTab(getAutoTab(raw.planMains || []));
           }
         } else {
           await setDoc(doc(db, 'trips', 'main'), TRIP_BLUEPRINT);
           setTripPlan(TRIP_BLUEPRINT);
+          setCurrentTab(getAutoTab(TRIP_BLUEPRINT.planMains));
         }
 
         setDataLoaded(true);
@@ -164,16 +166,6 @@ function App() {
     }
   };
 
-  const getTimeStatus = (itemTime: string) => {
-    const now = new Date();
-    const timeNow = now.getHours() * 60 + now.getMinutes();
-    const [h, m] = itemTime.split(':').map(Number);
-    const timeItem = h * 60 + m;
-    if (timeNow > timeItem + 30) return 'past';
-    if (timeNow >= timeItem - 15 && timeNow <= timeItem + 30) return 'current';
-    return 'future';
-  };
-
   const renderContent = () => {
     if (!tripPlan) return null;
 
@@ -194,19 +186,22 @@ function App() {
     const planMain = (tripPlan.planMains || []).find(pm => pm.id === currentTab);
     if (!planMain) return null;
 
+    const dayStatus = getDayStatus(planMain.date);
+    const itemStatus = (time: string) => getItemStatus(dayStatus, time);
+
     const scheduleItems = (planMain.schedules || []).map(i => ({ ...i, isExtra: false as const }));
     const extraItems = (userState.extras || [])
       .filter(e => e.planMainId === currentTab)
       .map(e => ({ ...e, isExtra: true as const }));
     const combined = [...scheduleItems, ...extraItems].sort((a, b) => a.time.localeCompare(b.time));
-    const hasPast = combined.some(i => getTimeStatus(i.time) === 'past');
+    const hasPast = dayStatus === 'past' || combined.some(i => itemStatus(i.time) === 'past');
 
     return (
       <div className="relative">
         <div className={`timeline-line ${hasPast ? 'line-past' : ''}`}></div>
         {combined.map(item => (
           <TripCard key={item.id} {...item} isTimeline={true}
-            status={getTimeStatus(item.time)}
+            status={itemStatus(item.time)}
             paid={userState.planned[item.id]?.paid || false}
             actual={userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : item.thb}
             onTogglePaid={togglePaid} onPriceChange={handlePriceChange}
@@ -254,10 +249,15 @@ function App() {
         isAdmin={isAdmin} onManage={() => setShowManage(true)} />
 
       <main className="pt-16 max-w-xl mx-auto px-4" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
-        <Dashboard planTotal={planTotal} actualTotal={actualTotal} tripName={tripPlan!.trip.name} />
-        <Tabs activeTab={currentTab} onTabChange={setCurrentTab}
-          planMains={tripPlan!.planMains.map(pm => ({ id: pm.id, title: pm.title, date: pm.date }))} />
-        <div id="content" className="min-h-[400px]">{renderContent()}</div>
+        <Dashboard 
+          planTotal={planTotal} 
+          actualTotal={actualTotal} 
+          tripName={tripPlan!.trip.name} 
+          planMains={tripPlan!.planMains}
+          activeTab={currentTab}
+          onTabChange={setCurrentTab}
+        />
+        <div id="content" className="min-h-[400px] mt-2">{renderContent()}</div>
       </main>
 
       <BottomNav activeTab={currentTab} onTabChange={setCurrentTab} onOpenExtra={() => setIsExtraModalOpen(true)} />
