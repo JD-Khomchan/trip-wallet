@@ -122,14 +122,25 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
     setShowPlanMainForm(true);
   };
 
+  const sortByDate = (mains: PlanMain[]) =>
+    [...mains].sort((a, b) => {
+      const toNum = (d?: string) => {
+        if (!d) return 9999;
+        const [dd, mm] = d.split('/').map(Number);
+        return (mm || 0) * 100 + (dd || 0);
+      };
+      return toNum(a.date) - toNum(b.date);
+    });
+
   const handleSavePlanMain = () => {
     if (!planMainForm.title.trim()) return;
     if (isNewPlanMain) {
       const newPm: PlanMain = { id: 'pm_' + Date.now(), title: planMainForm.title, date: planMainForm.date || undefined, jpy: planMainForm.jpy, thb: planMainForm.thb, type: planMainForm.type, desc: planMainForm.desc, image: planMainForm.image, mapUrl: planMainForm.mapUrl, guide: planMainForm.guide, schedules: [] };
-      onPlanUpdate({ ...plan, planMains: [...plan.planMains, newPm] });
+      onPlanUpdate({ ...plan, planMains: sortByDate([...plan.planMains, newPm]) });
       setOpenSections(prev => new Set([...prev, newPm.id]));
     } else if (editingPlanMain) {
-      onPlanUpdate({ ...plan, planMains: plan.planMains.map(pm => pm.id === editingPlanMain.id ? { ...pm, title: planMainForm.title, date: planMainForm.date || undefined, jpy: planMainForm.jpy, thb: planMainForm.thb, type: planMainForm.type, desc: planMainForm.desc, image: planMainForm.image, mapUrl: planMainForm.mapUrl, guide: planMainForm.guide } : pm) });
+      const updated = plan.planMains.map(pm => pm.id === editingPlanMain.id ? { ...pm, title: planMainForm.title, date: planMainForm.date || undefined, jpy: planMainForm.jpy, thb: planMainForm.thb, type: planMainForm.type, desc: planMainForm.desc, image: planMainForm.image, mapUrl: planMainForm.mapUrl, guide: planMainForm.guide } : pm);
+      onPlanUpdate({ ...plan, planMains: sortByDate(updated) });
     }
     setShowPlanMainForm(false);
   };
