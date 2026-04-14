@@ -11,7 +11,7 @@ import ExtraModal from './components/ExtraModal';
 import BottomNav from './components/BottomNav';
 import ManagePlan from './components/ManagePlan';
 import { TRIP_BLUEPRINT } from './constants';
-import type { UserState, TabId, DayItem, TripBlueprint } from './types';
+import type { UserState, TabId, ExtraItem, TripBlueprint } from './types';
 import './index.css';
 
 function App() {
@@ -34,18 +34,35 @@ function App() {
     return onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        // Load user state
         const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
         if (userSnap.exists()) setUserState(userSnap.data() as UserState);
 
-        // Load admin list
         const adminSnap = await getDoc(doc(db, 'config', 'admins'));
         if (adminSnap.exists()) setAdminEmails(adminSnap.data().emails || []);
 
-        // Load shared plan
         const planSnap = await getDoc(doc(db, 'trips', 'main'));
         if (planSnap.exists()) {
-          setTripPlan(planSnap.data() as TripBlueprint);
+          const raw = planSnap.data() as any;
+          // Migrate old structure (days[]) → new structure (planMains[])
+          if (!raw.planMains && raw.days) {
+            const migrated: TripBlueprint = {
+              trip: raw.trip || TRIP_BLUEPRINT.trip,
+              summary: raw.summary || [],
+              planMains: (raw.days as any[]).map((d: any, i: number) => ({
+                id: 'pm_' + (i + 1),
+                title: d.date,
+                date: d.date,
+                jpy: 0,
+                thb: 0,
+                type: 'activity',
+                schedules: d.items || [],
+              })),
+            };
+            await setDoc(doc(db, 'trips', 'main'), JSON.parse(JSON.stringify(migrated)));
+            setTripPlan(migrated);
+          } else {
+            setTripPlan(raw as TripBlueprint);
+          }
         } else {
           await setDoc(doc(db, 'trips', 'main'), TRIP_BLUEPRINT);
           setTripPlan(TRIP_BLUEPRINT);
@@ -87,13 +104,13 @@ function App() {
     if (!tripPlan) return { planTotal: 0, actualTotal: 0 };
     let p = 0, a = 0;
 
-    tripPlan.summary.forEach(item => {
+    (tripPlan.summary || []).forEach(item => {
       p += item.thb;
       if (userState.planned[item.id]?.paid) a += userState.planned[item.id].actual;
     });
 
-    tripPlan.days.forEach(day => {
-      day.items.forEach(item => {
+    (tripPlan.planMains || []).forEach(pm => {
+      (pm.schedules || []).forEach(item => {
         p += item.thb;
         if (userState.planned[item.id]?.paid) a += userState.planned[item.id].actual;
       });
@@ -135,9 +152,9 @@ function App() {
     }));
   };
 
-  const handleAddExtra = (item: Omit<DayItem, 'id' | 'isExtra'>) => {
-    const day = currentTab === 'summary' ? tripPlan?.days[0].date : currentTab;
-    const newExtra: DayItem = { ...item, id: 'ex_' + Date.now(), isExtra: true, day } as any;
+  const handleAddExtra = (item: Omit<ExtraItem, 'id' | 'planMainId'>) => {
+    const planMainId = currentTab === 'summary' ? tripPlan?.planMains[0]?.id : currentTab;
+    const newExtra: ExtraItem = { ...item, id: 'ex_' + Date.now(), planMainId };
     setUserState(prev => ({ ...prev, extras: [...prev.extras, newExtra] }));
   };
 
@@ -174,9 +191,14 @@ function App() {
       );
     }
 
-    const dayPlan = tripPlan.days.find(d => d.date === currentTab)?.items || [];
-    const dayExtras = userState.extras.filter((e: any) => e.day === currentTab);
-    const combined = [...dayPlan.map(i => ({ ...i, isExtra: false })), ...dayExtras].sort((a, b) => a.time.localeCompare(b.time));
+    const planMain = tripPlan.planMains.find(pm => pm.id === currentTab);
+    if (!planMain) return null;
+
+    const scheduleItems = planMain.schedules.map(i => ({ ...i, isExtra: false as const }));
+    const extraItems = userState.extras
+      .filter(e => e.planMainId === currentTab)
+      .map(e => ({ ...e, isExtra: true as const }));
+    const combined = [...scheduleItems, ...extraItems].sort((a, b) => a.time.localeCompare(b.time));
     const hasPast = combined.some(i => getTimeStatus(i.time) === 'past');
 
     return (
@@ -210,7 +232,7 @@ function App() {
         </div>
         <div className="text-center">
           <h1 className="font-headline font-extrabold text-2xl text-secondary">Trip Wallet</h1>
-          <p className="text-gray-400 text-sm mt-1">Japan May 2026</p>
+          <p className="text-gray-400 text-sm mt-1">{TRIP_BLUEPRINT.trip.name}</p>
         </div>
         <button onClick={() => signInWithPopup(auth, googleProvider)}
           className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-6 py-3 shadow-sm hover:shadow-md transition-shadow font-semibold text-gray-700">
@@ -232,8 +254,9 @@ function App() {
         isAdmin={isAdmin} onManage={() => setShowManage(true)} />
 
       <main className="pt-16 max-w-xl mx-auto px-4" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
-        <Dashboard planTotal={planTotal} actualTotal={actualTotal} />
-        <Tabs activeTab={currentTab} onTabChange={setCurrentTab} dayDates={tripPlan?.days.map(d => d.date) ?? []} />
+        <Dashboard planTotal={planTotal} actualTotal={actualTotal} tripName={tripPlan!.trip.name} />
+        <Tabs activeTab={currentTab} onTabChange={setCurrentTab}
+          planMains={tripPlan!.planMains.map(pm => ({ id: pm.id, title: pm.title, date: pm.date }))} />
         <div id="content" className="min-h-[400px]">{renderContent()}</div>
       </main>
 

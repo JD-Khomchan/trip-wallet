@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import type { DayItem } from '../types';
+import type { ExtraItem } from '../types';
 
 interface ExtraModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (item: Omit<DayItem, 'id' | 'isExtra'>) => void;
+  onSubmit: (item: Omit<ExtraItem, 'id' | 'planMainId'>) => void;
 }
 
 const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit }) => {
@@ -51,8 +51,8 @@ const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit }) =>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Time (24h)</label>
-              <input 
-                type="time" 
+              <input
+                type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 className="w-full border-0 border-b-2 border-gray-100 focus:ring-0 focus:border-japan-red py-1 font-headline font-bold text-lg outline-none"
@@ -60,8 +60,8 @@ const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit }) =>
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-black text-gray-300 uppercase tracking-widest">¥ JPY (ถ้ามี)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 placeholder="0"
                 value={jpy}
                 onChange={(e) => setJpy(e.target.value)}
@@ -71,8 +71,8 @@ const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit }) =>
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Item Name</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="แวะซื้ออะไรดี?"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -81,8 +81,8 @@ const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit }) =>
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Amount (฿ THB)</label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               placeholder="0.00"
               value={thb}
               onChange={(e) => setThb(e.target.value)}

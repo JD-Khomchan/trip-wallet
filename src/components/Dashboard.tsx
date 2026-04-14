@@ -3,9 +3,10 @@ import React from 'react';
 interface DashboardProps {
   planTotal: number;
   actualTotal: number;
+  tripName: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ planTotal, actualTotal }) => {
+const Dashboard: React.FC<DashboardProps> = ({ planTotal, actualTotal, tripName }) => {
   const diff = planTotal - actualTotal;
   const percent = Math.min(100, Math.round((actualTotal / planTotal) * 100)) || 0;
   const isOverBudget = diff < 0;
@@ -15,7 +16,7 @@ const Dashboard: React.FC<DashboardProps> = ({ planTotal, actualTotal }) => {
       <div className="flex justify-between items-end mb-6 px-2">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Journey to</span>
-          <h2 className="font-headline font-extrabold text-4xl text-secondary tracking-tight">Japan 2026</h2>
+          <h2 className="font-headline font-extrabold text-4xl text-secondary tracking-tight">{tripName}</h2>
         </div>
         <div className="enso-ring w-14 h-14 rounded-full flex items-center justify-center bg-white shadow-sm">
           <span className="text-xs font-bold text-japan-red italic">{percent}%</span>
