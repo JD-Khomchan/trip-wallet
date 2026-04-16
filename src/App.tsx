@@ -328,7 +328,7 @@ function App() {
     ].sort((a, b) => b.date.localeCompare(a.date));
 
     const tripBg = tripPlan.planMains?.find(pm => pm.image)?.image
-      ?? 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=2070&auto=format&fit=crop';
+      ?? 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=60&w=600&auto=format&fit=crop';
 
     return (
       <>
@@ -453,7 +453,7 @@ function App() {
               <div className="absolute -top-24 -left-10 -right-10 h-[500px] z-0 overflow-hidden pointer-events-none">
                 {pm.image ? (
                   <>
-                    <img src={pm.image} alt="" className="w-full h-full object-cover blur-[2px] scale-110 opacity-70 saturate-[1.8] brightness-90 transition-transform duration-1000" />
+                    <img src={pm.image} alt="" loading="lazy" className="w-full h-full object-cover blur-[2px] scale-110 opacity-70 saturate-[1.8] brightness-90 transition-transform duration-1000" />
                     <div className="absolute inset-0 bg-linear-to-b from-surface via-surface/90 to-transparent h-40"></div>
                     <div className="absolute inset-0 bg-linear-to-b from-surface via-transparent to-transparent opacity-100"></div>
                     <div className="absolute inset-0 bg-linear-to-b from-transparent via-surface/80 to-surface"></div>
