@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import type { TripBlueprint } from '../types';
-import { getIcon } from '../constants';
+import React from 'react';
+import type { TripBlueprint, PlanMain } from '../types';
 import { getDayStatus } from '../utils';
 
 interface TripOverviewProps {
@@ -8,225 +7,243 @@ interface TripOverviewProps {
   onBack: () => void;
 }
 
-const DAY_COLORS: Record<string, { border: string; badge: string; dot: string }> = {
-  past:    { border: 'border-l-primary',    badge: 'bg-primary/10 text-primary',       dot: 'bg-primary' },
-  today:   { border: 'border-l-accent',     badge: 'bg-accent/10 text-accent',         dot: 'bg-accent dot-pulse' },
-  future:  { border: 'border-l-gray-200',   badge: 'bg-gray-100 text-gray-400',        dot: 'bg-gray-300' },
-};
+const DAY_NAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const MONTH_NAMES = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+function getDayOfWeek(dateStr?: string): string {
+  if (!dateStr) return '';
+  const [d, m] = dateStr.split('/').map(Number);
+  const year = 2025;
+  const date = new Date(year, m - 1, d);
+  return DAY_NAMES[date.getDay()];
+}
+
+function getMonthName(dateStr?: string): string {
+  if (!dateStr) return '';
+  const [, m] = dateStr.split('/').map(Number);
+  return MONTH_NAMES[m - 1] || '';
+}
 
 const TripOverview: React.FC<TripOverviewProps> = ({ plan, onBack }) => {
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-
-  const toggle = (id: string) => setCollapsed(prev => {
-    const next = new Set(prev);
-    next.has(id) ? next.delete(id) : next.add(id);
-    return next;
-  });
-
-  const totalThb = [
-    ...(plan.summary || []),
-    ...(plan.planMains || []).flatMap(pm => pm.schedules || []),
-  ].reduce((s, i) => s + (i.thb || 0), 0);
-
-  const totalJpy = [
-    ...(plan.summary || []),
-    ...(plan.planMains || []).flatMap(pm => pm.schedules || []),
-  ].reduce((s, i) => s + (i.jpy || 0), 0);
-
-  const sortedMains = [...(plan.planMains || [])].sort((a, b) => {
+  const sortedMains: PlanMain[] = [...(plan.planMains || [])].sort((a, b) => {
     const toNum = (d?: string) => {
       if (!d) return 9999;
       const [dd, mm] = d.split('/').map(Number);
-      return (mm || 0) * 100 + (dd || 0);
+      return mm * 100 + dd;
     };
     return toNum(a.date) - toNum(b.date);
   });
 
+  const totalThb = [...(plan.summary || []), ...sortedMains.flatMap(p => p.schedules || [])]
+    .reduce((s, i) => s + (i.thb || 0), 0);
+  const totalJpy = [...(plan.summary || []), ...sortedMains.flatMap(p => p.schedules || [])]
+    .reduce((s, i) => s + (i.jpy || 0), 0);
+
+  // Find cover image per day (first item with image)
+  const getDayImage = (pm: PlanMain) => {
+    if (pm.image) return pm.image;
+    return (pm.schedules || []).find(s => s.image)?.image || null;
+  };
+
   return (
-    <div className="min-h-screen bg-surface">
-      {/* Header */}
-      <header className="fixed top-0 w-full z-50 glass-header border-b border-gray-100"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-2xl mx-auto px-5 py-4 flex items-center gap-3">
-          <button onClick={onBack}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-secondary transition-colors shrink-0">
-            <span className="material-symbols-outlined text-xl">arrow_back</span>
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-headline font-extrabold text-lg text-secondary leading-none truncate">
-              {plan.trip.name}
-            </h1>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Trip Overview</p>
+    <div className="min-h-screen bg-white">
+      {/* Minimal back button */}
+      <button
+        onClick={onBack}
+        className="fixed top-0 left-0 z-50 m-4 mt-[calc(1rem+env(safe-area-inset-top))] w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur shadow-md border border-gray-100 text-secondary hover:bg-gray-50 transition-colors"
+      >
+        <span className="material-symbols-outlined text-xl">arrow_back</span>
+      </button>
+
+      <div className="max-w-lg mx-auto px-6 pb-32"
+        style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
+
+        {/* Trip Name — editorial header */}
+        <div className="mb-10 pt-4">
+          <div className="flex items-baseline gap-0 leading-none mb-1">
+            <span
+              className="font-headline font-black text-secondary tracking-[-0.02em]"
+              style={{ fontSize: 'clamp(2.8rem, 12vw, 4.5rem)' }}
+            >
+              {plan.trip.name.split(' ')[0].toUpperCase()}
+            </span>
+            <span
+              className="text-secondary ml-2"
+              style={{
+                fontFamily: '"Dancing Script", "Brush Script MT", cursive',
+                fontSize: 'clamp(2rem, 9vw, 3.5rem)',
+                fontStyle: 'italic',
+                fontWeight: 600,
+              }}
+            >
+              {plan.trip.name.split(' ').slice(1).join(' ') || plan.trip.destination}
+            </span>
           </div>
-          {/* Budget pills */}
-          <div className="flex gap-2 shrink-0">
+          {/* Budget summary */}
+          <div className="flex gap-3 mt-4">
             {totalThb > 0 && (
-              <div className="bg-red-50 border border-red-100 rounded-2xl px-3 py-1.5 text-center">
-                <p className="text-[8px] font-black text-japan-red uppercase tracking-wider leading-none">THB</p>
-                <p className="text-[13px] font-headline font-black text-japan-red leading-tight">
-                  ฿{totalThb.toLocaleString()}
-                </p>
-              </div>
+              <span className="text-[11px] font-bold text-gray-400">
+                ฿<span className="text-secondary font-black ml-0.5">{totalThb.toLocaleString()}</span>
+              </span>
             )}
+            {totalThb > 0 && totalJpy > 0 && <span className="text-gray-200">·</span>}
             {totalJpy > 0 && (
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl px-3 py-1.5 text-center">
-                <p className="text-[8px] font-black text-blue-500 uppercase tracking-wider leading-none">JPY</p>
-                <p className="text-[13px] font-headline font-black text-blue-500 leading-tight">
-                  ¥{totalJpy.toLocaleString()}
-                </p>
-              </div>
+              <span className="text-[11px] font-bold text-gray-400">
+                ¥<span className="text-secondary font-black ml-0.5">{totalJpy.toLocaleString()}</span>
+              </span>
             )}
           </div>
         </div>
-      </header>
 
-      <main className="max-w-2xl mx-auto px-4 pb-32 space-y-3"
-        style={{ paddingTop: 'calc(5.5rem + env(safe-area-inset-top))' }}>
-
-        {/* Fixed Expenses */}
+        {/* Fixed Expenses (if any) */}
         {(plan.summary || []).length > 0 && (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <button
-              onClick={() => toggle('__summary')}
-              className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-gray-50/50 transition-colors">
-              <div className="w-9 h-9 rounded-2xl bg-secondary/5 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-secondary" style={{ fontSize: '18px' }}>payments</span>
+          <div className="mb-8">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-300 mb-3">Fixed Expenses</p>
+            {plan.summary.map(item => (
+              <div key={item.id} className="flex items-baseline gap-3 py-1.5">
+                <span className="text-[12px] text-secondary flex-1 font-medium">{item.title}</span>
+                <span className={`text-[12px] font-black shrink-0 ${item.jpy > 0 && item.thb === 0 ? 'text-blue-500' : 'text-japan-red'}`}>
+                  {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
+                </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-headline font-extrabold text-[14px] text-secondary">Fixed Expenses</p>
-                <p className="text-[10px] font-bold text-gray-400">
-                  {plan.summary.length} items
-                </p>
-              </div>
-              <span className="material-symbols-outlined text-gray-300 transition-transform duration-300"
-                style={{ transform: collapsed.has('__summary') ? 'rotate(0deg)' : 'rotate(180deg)' }}>
-                expand_more
-              </span>
-            </button>
-
-            {!collapsed.has('__summary') && (
-              <div className="border-t border-gray-50 divide-y divide-gray-50">
-                {plan.summary.map(item => (
-                  <div key={item.id} className="flex items-center gap-3 px-5 py-3">
-                    <span className="material-symbols-outlined text-gray-300" style={{ fontSize: '16px' }}>
-                      {getIcon(item.type)}
-                    </span>
-                    <p className="flex-1 text-[13px] font-bold text-secondary truncate">{item.title}</p>
-                    <p className={`text-[13px] font-black shrink-0 ${item.jpy > 0 ? 'text-blue-500' : 'text-japan-red'}`}>
-                      {item.jpy > 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+            ))}
+            <div className="mt-4 h-px bg-gray-100" />
           </div>
         )}
 
-        {/* Day Cards */}
-        {sortedMains.map((pm) => {
+        {/* Days */}
+        {sortedMains.map((pm, idx) => {
           const status = getDayStatus(pm.date);
-          const colors = DAY_COLORS[status];
-          const isOpen = !collapsed.has(pm.id);
-          const dayThb = (pm.schedules || []).reduce((s, i) => s + (i.thb || 0), 0);
-          const dayJpy = (pm.schedules || []).reduce((s, i) => s + (i.jpy || 0), 0);
-          const [d, mo] = pm.date?.split('/') || [];
-          const monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-          const monthLabel = mo ? (monthNames[parseInt(mo) - 1] || '') : '';
+          const dayOfWeek = getDayOfWeek(pm.date);
+          const [dayNum] = pm.date?.split('/') || [''];
+          const monthName = getMonthName(pm.date);
+          const coverImg = getDayImage(pm);
+          const isPast = status === 'past';
+          const isToday = status === 'today';
 
           return (
-            <div key={pm.id}
-              className={`bg-white rounded-3xl border-y border-r border-gray-100 border-l-[5px] shadow-sm overflow-hidden ${colors.border}`}>
-              {/* Day Header */}
-              <button
-                onClick={() => toggle(pm.id)}
-                className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-gray-50/30 transition-colors">
-                {/* Date block */}
-                {pm.date ? (
-                  <div className="shrink-0 w-10 flex flex-col items-center">
-                    <span className="text-[8px] font-black text-gray-400 uppercase">{monthLabel}</span>
-                    <span className="text-2xl font-headline font-black text-secondary leading-none">{d}</span>
+            <div key={pm.id}>
+              {/* Day row */}
+              <div className="flex gap-5 py-5">
+                {/* Left col — day label + date */}
+                <div className="shrink-0 w-16">
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-[8px] font-black tracking-[0.18em] text-gray-400 uppercase">DAY</span>
+                    <span className="text-[8px] font-black tracking-[0.18em] text-gray-400">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
                   </div>
-                ) : (
-                  <div className={`w-3 h-3 rounded-full shrink-0 ${colors.dot}`} />
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-headline font-extrabold text-[14px] text-secondary truncate">{pm.title}</p>
-                    {status === 'today' && (
-                      <span className="text-[8px] font-black bg-accent text-white px-2 py-0.5 rounded-full uppercase shrink-0">Today</span>
-                    )}
-                    {status === 'past' && (
-                      <span className="material-symbols-outlined text-primary filled shrink-0" style={{ fontSize: '14px' }}>check_circle</span>
-                    )}
-                  </div>
-                  <p className="text-[10px] font-bold text-gray-400 mt-0.5">
-                    {(pm.schedules || []).length} stops
-                    {dayThb > 0 && <span className="text-japan-red ml-2">฿{dayThb.toLocaleString()}</span>}
-                    {dayJpy > 0 && <span className="text-blue-400 ml-2">¥{dayJpy.toLocaleString()}</span>}
-                  </p>
-                </div>
-
-                <span className="material-symbols-outlined text-gray-300 shrink-0 transition-transform duration-300"
-                  style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                  expand_more
-                </span>
-              </button>
-
-              {/* Schedule Items */}
-              {isOpen && (pm.schedules || []).length > 0 && (
-                <div className="border-t border-gray-50">
-                  {pm.schedules.map((item, idx) => (
-                    <div key={item.id}
-                      className={`flex items-center gap-3 px-5 py-3 ${idx < pm.schedules.length - 1 ? 'border-b border-gray-50' : ''}`}>
-                      {/* Time */}
-                      <span className="text-[11px] font-black text-gray-300 w-10 shrink-0 text-right">{item.time}</span>
-                      {/* Icon */}
-                      <span className="material-symbols-outlined text-gray-300 shrink-0" style={{ fontSize: '16px' }}>
-                        {getIcon(item.type)}
-                      </span>
-                      {/* Title */}
-                      <p className="flex-1 text-[13px] font-bold text-secondary truncate">{item.title}</p>
-                      {/* Price */}
-                      {(item.thb > 0 || item.jpy > 0) && (
-                        <p className={`text-[12px] font-black shrink-0 ${item.jpy > 0 ? 'text-blue-500' : 'text-japan-red'}`}>
-                          {item.jpy > 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
+                  {pm.date && (
+                    <div className="space-y-0">
+                      {dayOfWeek && (
+                        <p className="text-[7px] font-black tracking-[0.2em] text-gray-300 uppercase leading-tight">
+                          {dayOfWeek}
                         </p>
                       )}
+                      <p className="text-[7px] font-black tracking-[0.2em] text-gray-300 uppercase leading-tight">
+                        DAY
+                      </p>
+                      <p className="text-[9px] font-black tracking-[0.1em] text-gray-400 mt-1">
+                        {dayNum}/{monthName}
+                      </p>
                     </div>
-                  ))}
+                  )}
+                  {/* Status dot */}
+                  {isToday && (
+                    <div className="mt-2 w-1.5 h-1.5 rounded-full bg-accent dot-pulse" />
+                  )}
+                  {isPast && (
+                    <span className="material-symbols-outlined text-primary filled mt-1" style={{ fontSize: '14px' }}>
+                      check_circle
+                    </span>
+                  )}
                 </div>
-              )}
 
-              {isOpen && (pm.schedules || []).length === 0 && (
-                <div className="border-t border-gray-50 py-5 text-center">
-                  <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">No schedules</p>
+                {/* Right col — content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex gap-3 items-start">
+                    <div className="flex-1 min-w-0">
+                      {/* Day title */}
+                      <h2
+                        className={`font-headline font-black uppercase tracking-wide leading-tight mb-1 ${
+                          isToday ? 'text-accent' : isPast ? 'text-gray-300' : 'text-secondary'
+                        }`}
+                        style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', letterSpacing: '0.04em' }}
+                      >
+                        {pm.title}
+                      </h2>
+                      {pm.desc && (
+                        <p className="text-[11px] font-bold text-japan-red mb-3 leading-snug">{pm.desc}</p>
+                      )}
+                    </div>
+
+                    {/* Cover image */}
+                    {coverImg && (
+                      <div className="shrink-0 w-24 h-28 rounded-xl overflow-hidden shadow-md ml-2">
+                        <img
+                          src={coverImg}
+                          alt={pm.title}
+                          className="w-full h-full object-cover"
+                          onError={e => (e.currentTarget.style.display = 'none')}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Schedule items */}
+                  <div className="space-y-2.5 mt-1">
+                    {(pm.schedules || []).map(item => (
+                      <div key={item.id} className="flex items-baseline gap-3">
+                        <span className="font-headline font-black text-[13px] text-secondary shrink-0 w-10 text-right">
+                          {item.time}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-[13px] leading-snug ${isPast ? 'text-gray-400' : 'text-secondary'}`}>
+                            {item.title}
+                          </span>
+                          {item.desc && (
+                            <p className="text-[11px] text-gray-400 italic mt-0.5 ml-0">{item.desc}</p>
+                          )}
+                        </div>
+                        {(item.thb > 0 || item.jpy > 0) && (
+                          <span className={`text-[11px] font-black shrink-0 ${item.jpy > 0 && item.thb === 0 ? 'text-blue-400' : 'text-japan-red'}`}>
+                            {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-gray-100 mx-16" />
             </div>
           );
         })}
 
-        {/* Grand Total */}
-        <div className="bg-secondary rounded-3xl p-5 shadow-xl shadow-secondary/20">
-          <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-3">Grand Total Plan</p>
-          <div className="flex gap-4">
-            {totalThb > 0 && (
-              <div>
-                <p className="text-[9px] font-black text-white/40 uppercase">Thai Baht</p>
-                <p className="text-2xl font-headline font-black text-white">฿{totalThb.toLocaleString()}</p>
-              </div>
-            )}
-            {totalJpy > 0 && (
-              <div>
-                <p className="text-[9px] font-black text-white/40 uppercase">Japanese Yen</p>
-                <p className="text-2xl font-headline font-black text-blue-300">¥{totalJpy.toLocaleString()}</p>
-              </div>
-            )}
+        {/* Footer total */}
+        {(totalThb > 0 || totalJpy > 0) && (
+          <div className="mt-10 pt-6 border-t border-gray-100">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-300 mb-2">Total Budget</p>
+            <div className="flex gap-6">
+              {totalThb > 0 && (
+                <div>
+                  <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Thai Baht</p>
+                  <p className="font-headline font-black text-2xl text-japan-red">฿{totalThb.toLocaleString()}</p>
+                </div>
+              )}
+              {totalJpy > 0 && (
+                <div>
+                  <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Japanese Yen</p>
+                  <p className="font-headline font-black text-2xl text-blue-500">¥{totalJpy.toLocaleString()}</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-      </main>
+      </div>
     </div>
   );
 };
