@@ -158,27 +158,27 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
   const renderSummaryRow = (item: SummaryItem) => (
     <div key={item.id} 
       onClick={() => openEditItem(item, 'summary')}
-      className="flex items-center gap-4 py-3.5 px-4 rounded-3xl hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-100 cursor-pointer">
-      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${TYPE_BADGE[item.type] || TYPE_BADGE.other}`}>
+      className="flex items-center gap-4 py-4 px-5 rounded-4xl hover:bg-white hover:shadow-xl hover:shadow-secondary/5 hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-50 cursor-pointer active:scale-98">
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-black/5 transition-transform group-hover:rotate-3 ${TYPE_BADGE[item.type] || TYPE_BADGE.other}`}>
         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{getIcon(item.type)}</span>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-bold text-secondary truncate">{item.title}</p>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 bg-gray-100/50 px-1.5 py-0.5 rounded-md leading-none">{item.type}</span>
-          {item.desc && <span className="text-[10px] text-gray-400 truncate max-w-[120px]">{item.desc}</span>}
+      <div className="flex-1 min-w-0 py-1">
+        <p className="text-[14px] font-black text-secondary leading-tight wrap-break-word line-clamp-2 mb-1">{item.title}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[8px] font-black uppercase tracking-widest text-secondary/40 bg-secondary/5 px-2 py-0.5 rounded-md leading-none border border-secondary/5">{item.type}</span>
+          {item.desc && <span className="text-[10px] font-bold text-gray-400/70 truncate max-w-[180px] italic">{item.desc}</span>}
         </div>
       </div>
       <div className="text-right shrink-0">
         {item.jpy > 0 && item.thb === 0
-          ? <p className="text-[13px] font-black text-blue-500">¥{item.jpy.toLocaleString()}</p>
-          : <p className="text-[13px] font-black text-japan-red">฿{item.thb.toLocaleString()}</p>}
+          ? <p className="text-[14px] font-black text-blue-500 font-headline">¥{item.jpy.toLocaleString()}</p>
+          : <p className="text-[14px] font-black text-japan-red font-headline">฿{item.thb.toLocaleString()}</p>}
       </div>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0 shrink-0 ml-1">
+      <div className="flex gap-1 shrink-0 ml-1">
         <button 
           onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id, 'summary'); }} 
-          className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-400">
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+          className="w-9 h-9 flex items-center justify-center rounded-2xl bg-red-50/80 text-red-500/60 hover:text-red-500 hover:bg-red-100 transition-all active:scale-90 shadow-sm">
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
         </button>
       </div>
     </div>
@@ -187,28 +187,28 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
   const renderScheduleRow = (item: ScheduleItem, pmId: string) => (
     <div key={item.id} 
       onClick={() => openEditItem(item, pmId)}
-      className="flex items-center gap-4 py-3.5 px-4 rounded-3xl hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-100 cursor-pointer">
-      <div className="flex flex-col items-end shrink-0 w-10">
-        <span className="text-[11px] font-black text-secondary leading-none">{item.time}</span>
-        <span className="text-[8px] font-bold text-gray-300 uppercase mt-0.5">TIME</span>
+      className="flex items-center gap-4 py-4 px-5 rounded-4xl hover:bg-white hover:shadow-xl hover:shadow-secondary/5 hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-50 cursor-pointer active:scale-98">
+      <div className="flex flex-col items-end shrink-0 w-12 border-r border-gray-100 pr-3 mr-1">
+        <span className="text-[12px] font-black text-secondary font-headline leading-none">{item.time}</span>
+        <span className="text-[7px] font-black text-gray-300 uppercase tracking-tighter mt-1">ARRIVAL</span>
       </div>
-      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${TYPE_BADGE[item.type] || TYPE_BADGE.other}`}>
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-black/5 transition-transform group-hover:rotate-3 ${TYPE_BADGE[item.type] || TYPE_BADGE.other}`}>
         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{getIcon(item.type)}</span>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-bold text-secondary truncate">{item.title}</p>
-        {item.desc && <p className="text-[10px] text-gray-400 truncate mt-0.5">{item.desc}</p>}
+      <div className="flex-1 min-w-0 py-1">
+        <p className="text-[14px] font-black text-secondary leading-tight wrap-break-word line-clamp-2 mb-1">{item.title}</p>
+        {item.desc && <p className="text-[10px] font-bold text-gray-400/70 line-clamp-1 italic">{item.desc}</p>}
       </div>
       <div className="text-right shrink-0">
         {item.jpy > 0 && item.thb === 0
-          ? <p className="text-[13px] font-black text-blue-500">¥{item.jpy.toLocaleString()}</p>
-          : <p className="text-[13px] font-black text-japan-red">฿{item.thb.toLocaleString()}</p>}
+          ? <p className="text-[14px] font-black text-blue-500 font-headline">¥{item.jpy.toLocaleString()}</p>
+          : <p className="text-[14px] font-black text-japan-red font-headline">฿{item.thb.toLocaleString()}</p>}
       </div>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0 shrink-0 ml-1">
+      <div className="flex gap-1 shrink-0 ml-1">
         <button 
           onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id, pmId); }} 
-          className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-400">
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+          className="w-9 h-9 flex items-center justify-center rounded-2xl bg-red-50/80 text-red-500/60 hover:text-red-500 hover:bg-red-100 transition-all active:scale-90 shadow-sm">
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
         </button>
       </div>
     </div>
@@ -216,24 +216,27 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
 
   return (
     <div className="min-h-screen bg-surface">
-      <header className="fixed top-0 w-full z-100 glass-header border-b border-gray-100"
+      <header className="fixed top-0 w-full z-100 glass-header border-b border-gray-100 shadow-sm"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-2xl mx-auto px-5 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-secondary transition-colors">
+        <div className="max-w-2xl mx-auto px-5 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white shadow-sm border border-gray-100 text-secondary hover:bg-gray-50 hover:-translate-x-1 active:scale-90 transition-all">
               <span className="material-symbols-outlined text-xl">arrow_back</span>
             </button>
             <div className="flex flex-col">
-              <h1 className="font-headline font-extrabold text-lg text-secondary leading-none">Manage Plan</h1>
-              <span className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-wider">
-                {plan.planMains?.length || 0} Sets · {(plan.summary?.length || 0)} Fixed items
-              </span>
+              <h1 className="font-headline font-black text-xl text-secondary leading-none tracking-tight">Manage Plan</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                  {plan.planMains?.length || 0} Sets · {(plan.summary?.length || 0)} Fixed
+                </span>
+                <div className="h-0.5 w-3 bg-gray-200"></div>
+              </div>
             </div>
           </div>
           <button
             onClick={() => { if (confirm('โหลด Template ใหม่? ข้อมูลปัจจุบันจะถูกแทนที่')) onPlanUpdate(TRIP_BLUEPRINT); }}
-            className="flex items-center gap-1.5 bg-gray-50 hover:bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider px-3 py-2 rounded-xl border border-gray-100 transition-all active:scale-95">
-            <span className="material-symbols-outlined text-sm">restore</span> Template
+            className="flex items-center gap-2 bg-secondary text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl shadow-lg shadow-secondary/20 hover:scale-105 active:scale-95 transition-all text-center">
+            <span className="material-symbols-outlined text-sm">restore</span> Restore
           </button>
         </div>
       </header>
@@ -242,21 +245,29 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
         style={{ paddingTop: 'calc(6.5rem + env(safe-area-inset-top))' }}>
 
         {/* Summary Accordion */}
-        <div className="bg-white rounded-4xl shadow-sm overflow-hidden border border-gray-100 card-enter hover:scale-[1.02] hover:shadow-xl hover:shadow-secondary/5 transition-all duration-300">
+        <div className="bg-white rounded-4xl shadow-xl shadow-secondary/5 overflow-hidden border border-gray-100 card-enter hover:shadow-2xl hover:shadow-secondary/10 hover:scale-[1.01] transition-all duration-500 relative group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700"></div>
+          
           <button
             onClick={() => toggleSection('summary')}
-            className="w-full flex items-center gap-4 px-5 py-5 text-left transition-colors hover:bg-gray-50/50">
-            <div className="w-10 h-10 rounded-2xl bg-secondary/5 flex items-center justify-center shrink-0 border border-secondary/10 shadow-sm">
-              <span className="material-symbols-outlined text-secondary" style={{ fontSize: '20px' }}>payments</span>
+            className="w-full relative z-10 flex items-center gap-4 px-6 py-6 text-left transition-colors hover:bg-gray-50/5">
+            <div className="w-12 h-12 rounded-2xl bg-secondary/5 flex items-center justify-center shrink-0 border border-secondary/10 shadow-sm transition-transform group-hover:rotate-6">
+              <span className="material-symbols-outlined text-secondary" style={{ fontSize: '24px' }}>payments</span>
             </div>
             <div className="flex-1">
-              <p className="font-headline font-extrabold text-[15px] text-secondary">Fixed Expenses</p>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                {plan.summary?.length || 0} items · ฿{(plan.summary || []).reduce((s, i) => s + i.thb, 0).toLocaleString()}
-              </p>
+              <p className="font-headline font-black text-lg text-secondary tracking-tight">Fixed Expenses Control</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  {plan.summary?.length || 0} items
+                </p>
+                <div className="w-1 h-1 rounded-full bg-gray-200"></div>
+                <p className="text-[10px] font-black text-japan-red uppercase tracking-widest">
+                  ฿{(plan.summary || []).reduce((s, i) => s + i.thb, 0).toLocaleString()}
+                </p>
+              </div>
             </div>
-            <div className={`p-1 rounded-full transition-all duration-300 ${openSections.has('summary') ? 'bg-secondary text-white' : 'text-gray-300'}`}>
-              <span className="material-symbols-outlined text-sm leading-none"
+            <div className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-500 ${openSections.has('summary') ? 'bg-secondary text-white shadow-lg shadow-secondary/20' : 'bg-gray-50 text-gray-300'}`}>
+              <span className="material-symbols-outlined text-sm leading-none font-black"
                 style={{ transform: openSections.has('summary') ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                 expand_more
               </span>
@@ -264,13 +275,19 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
           </button>
           
           {openSections.has('summary') && (
-            <div className="border-t border-gray-50 px-3 pb-4 bg-gray-50/20">
-              <div className="mt-2 space-y-1">
-                {(plan.summary || []).map(renderSummaryRow)}
+            <div className="relative z-10 border-t border-gray-50 px-4 pb-6 bg-gray-50/10">
+              <div className="mt-4 space-y-1">
+                {(plan.summary || []).length === 0 ? (
+                    <div className="py-10 text-center bg-white/50 rounded-3xl border-2 border-dashed border-gray-100 mx-2">
+                        <span className="material-symbols-outlined text-gray-200 text-3xl mb-1">payments</span>
+                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">No entries found</p>
+                    </div>
+                ) : (plan.summary || []).map(renderSummaryRow)}
               </div>
               <button onClick={() => openAddItem('summary')}
-                className="w-full mt-3 py-3 text-[11px] font-black uppercase tracking-widest text-primary flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/20 hover:bg-primary/5 transition-all active:scale-98">
-                <span className="material-symbols-outlined text-sm">add_circle</span> Add Fixed Item
+                className="w-full mt-4 py-4 text-[11px] font-black uppercase tracking-widest text-primary flex items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95 group/add">
+                <span className="material-symbols-outlined text-lg transition-transform group-hover/add:rotate-90">add_circle</span> 
+                <span>Add Record Entry</span>
               </button>
             </div>
           )}
@@ -282,31 +299,42 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
           const totalThb = (pm.schedules || []).reduce((s, i) => s + i.thb, 0);
           return (
             <div key={pm.id} 
-              className={`bg-white rounded-4xl shadow-sm overflow-hidden border-y border-r border-gray-100 border-l-[6px] card-enter hover:scale-[1.02] hover:shadow-xl hover:shadow-secondary/5 transition-all duration-300 ${colorClass}`}
+              className={`bg-white rounded-4xl shadow-xl shadow-secondary/5 overflow-hidden border-y border-r border-gray-100 border-l-[6px] card-enter hover:shadow-2xl hover:shadow-secondary/10 hover:scale-[1.01] transition-all duration-500 relative group ${colorClass}`}
               style={{ animationDelay: `${(idx + 1) * 0.05}s` }}>
               
+              <div className="absolute top-0 right-0 w-24 h-24 bg-black/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-125 duration-700"></div>
+
               {/* Plan Main Header */}
-              <div className="flex items-center gap-3 px-5 py-5">
-                <button onClick={() => toggleSection(pm.id)} className="flex items-center gap-4 flex-1 text-left min-w-0 group">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-black/5 ${TYPE_BADGE[pm.type] || TYPE_BADGE.other}`}>
+              <div className="flex items-center gap-3 px-6 py-6 relative z-10">
+                <button onClick={() => toggleSection(pm.id)} className="flex items-center gap-3 flex-1 text-left min-w-0 group/header">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-black/5 transition-transform group-hover/header:rotate-3 ${TYPE_BADGE[pm.type] || TYPE_BADGE.other}`}>
                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{getIcon(pm.type)}</span>
                   </div>
                   <div className="flex-1 min-w-0" onClick={(e) => { e.stopPropagation(); openEditPlanMain(pm); }}>
-                    <div className="flex items-center gap-2">
-                      <p className="font-headline font-extrabold text-[15px] text-secondary truncate group-hover:text-primary transition-colors">{pm.title}</p>
-                      {pm.date && (
-                        <span className="text-[9px] font-black text-white sakura-gradient px-2 py-0.5 rounded-full shadow-sm shrink-0 uppercase">
-                          {pm.date}
-                        </span>
-                      )}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <p className="font-headline font-black text-lg text-secondary group-hover:text-primary transition-colors tracking-tight leading-tight shrink-0">{pm.title}</p>
+                        {pm.date && (
+                          <span className="text-[10px] font-black text-white sakura-gradient px-3 py-1 rounded-xl shadow-md shadow-japan-red/20 shrink-0 uppercase tracking-widest">
+                            {pm.date}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                          {pm.schedules?.length || 0} events
+                        </p>
+                        {totalThb > 0 && (
+                          <>
+                            <div className="w-1 h-1 rounded-full bg-gray-200"></div>
+                            <p className="text-[10px] font-black text-japan-red uppercase tracking-widest">฿{totalThb.toLocaleString()}</p>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                      {(pm.schedules || []).length} schedules
-                      {totalThb > 0 && ` · ฿${totalThb.toLocaleString()}`}
-                    </p>
                   </div>
-                  <div className={`p-1 rounded-full transition-all duration-300 ${isOpen ? 'bg-secondary text-white' : 'text-gray-300 group-hover:text-gray-400'}`}>
-                    <span className="material-symbols-outlined text-sm leading-none"
+                  <div className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-500 ${isOpen ? 'bg-secondary text-white shadow-lg shadow-secondary/20 scale-110' : 'bg-gray-50 text-gray-300'}`}>
+                    <span className="material-symbols-outlined text-sm leading-none font-black"
                       style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                       expand_more
                     </span>
@@ -314,28 +342,28 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
                 </button>
                 
                 {/* Plan main action buttons */}
-                <div className="flex gap-1 shrink-0 ml-1">
-                  <button onClick={() => handleDeletePlanMain(pm.id)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-400 transition-colors">
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                <div className="flex gap-1 shrink-0 ml-2">
+                  <button onClick={() => handleDeletePlanMain(pm.id)} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-red-50 hover:bg-red-500 hover:text-white text-red-400 transition-all hover:scale-105 active:scale-95 shadow-sm">
+                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>delete</span>
                   </button>
                 </div>
               </div>
 
               {/* Schedule Items */}
               {isOpen && (
-                <div className="border-t border-gray-50 px-3 pb-4 bg-gray-50/20">
-                  <div className="mt-2 space-y-1">
-                    {(pm.schedules || []).length === 0 && (
-                      <div className="py-8 text-center bg-white/40 rounded-2xl border-2 border-dashed border-gray-100 mx-2 my-2">
-                         <span className="material-symbols-outlined text-gray-200 text-3xl mb-1">event_busy</span>
-                         <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">No schedules yet</p>
+                <div className="relative z-10 border-t border-gray-50 px-4 pb-6 bg-gray-50/10">
+                  <div className="mt-4 space-y-1">
+                    {(pm.schedules || []).length === 0 ? (
+                      <div className="py-12 text-center bg-white/40 rounded-4xl border-2 border-dashed border-gray-100 mx-2 my-2">
+                         <span className="material-symbols-outlined text-gray-200 text-4xl mb-2">event_busy</span>
+                         <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">No detailed schedules</p>
                       </div>
-                    )}
-                    {(pm.schedules || []).map(item => renderScheduleRow(item, pm.id))}
+                    ) : (pm.schedules || []).map(item => renderScheduleRow(item, pm.id))}
                   </div>
                   <button onClick={() => openAddItem(pm.id)}
-                    className="w-full mt-3 py-3 text-[11px] font-black uppercase tracking-widest text-primary flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/20 hover:bg-primary/5 transition-all active:scale-98">
-                    <span className="material-symbols-outlined text-sm">add_circle</span> Add Schedule Item
+                    className="w-full mt-4 py-4 text-[11px] font-black uppercase tracking-widest text-primary flex items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95 group/add">
+                    <span className="material-symbols-outlined text-lg transition-transform group-hover/add:rotate-90">add_circle</span> 
+                    <span>Add Day Schedule</span>
                   </button>
                 </div>
               )}
