@@ -58,7 +58,7 @@ const BudgetPlanModal: React.FC<BudgetPlanModalProps> = ({ isOpen, onClose, thbP
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto min-h-0 p-6 space-y-4">
           {/* ส่วนประกอบ */}
           <div className="space-y-3">
             <div className="flex items-center justify-between py-3 px-4 bg-japan-red/5 rounded-2xl">

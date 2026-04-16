@@ -80,7 +80,7 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose, onConfirm, cur
         </div>
 
         {/* Input Section */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+        <div className="flex-1 overflow-y-auto min-h-0 p-8 space-y-8">
           <div className="space-y-4">
             <div className="flex justify-between items-end px-1">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Amount to Deposit</label>

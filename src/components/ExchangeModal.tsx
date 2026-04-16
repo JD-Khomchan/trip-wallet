@@ -62,7 +62,7 @@ const ExchangeModal: React.FC<ExchangeModalProps> = ({ isOpen, onClose, onConfir
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto min-h-0 p-6 space-y-5">
           {/* THB Amount */}
           <div className="space-y-1">
             <label className="text-[10px] font-black text-gray-300 uppercase tracking-widest">จำนวน THB ที่จะแลก</label>

@@ -62,7 +62,7 @@ const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit, acti
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-8 pt-8 space-y-6">
+        <div className="flex-1 overflow-y-auto min-h-0 px-8 pt-8 space-y-6">
           {/* Amount Input - Prominent */}
           <div className="space-y-3">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Spending Amount</label>
