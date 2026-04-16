@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    VitePWA({
+    VitePWA({ selfDestroying: true,
       registerType: 'autoUpdate',
       workbox: {
         skipWaiting: true,
