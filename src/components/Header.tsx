@@ -12,9 +12,9 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onReset, currentTime, user, onLogout, isAdmin, onManage }) => {
   return (
-    <header className="fixed top-0 w-full z-40 glass-header border-b border-gray-100"
+    <header className="fixed top-0 w-full z-[100] glass-header border-b border-gray-100"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <div className="max-w-xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div className="max-w-2xl mx-auto px-5 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 sakura-gradient rounded-lg flex items-center justify-center text-white shadow-lg shrink-0">
             <span className="material-symbols-outlined text-sm">wallet</span>

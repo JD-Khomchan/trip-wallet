@@ -5,93 +5,128 @@ interface ExtraModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (item: Omit<ExtraItem, 'id' | 'planMainId'>) => void;
+  activeWallet: 'thb' | 'jpy';
 }
 
-const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit, activeWallet }) => {
   const [time, setTime] = useState('');
   const [title, setTitle] = useState('');
-  const [jpy, setJpy] = useState<string>('');
-  const [thb, setThb] = useState<string>('');
+  const [amount, setAmount] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       const now = new Date();
-      setTime(now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0'));
+      setTime(now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0'));
+      setTitle('');
+      setAmount('');
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const isJpy = activeWallet === 'jpy';
+
   const handleSubmit = () => {
-    if (!time || !title || isNaN(parseFloat(thb))) {
-      alert('กรุณากรอกข้อมูลให้ครบ');
-      return;
-    }
+    if (!time || !title) { alert('กรุณากรอกเวลาและชื่อรายการ'); return; }
     onSubmit({
       time,
       title,
-      jpy: parseFloat(jpy) || 0,
-      thb: parseFloat(thb),
+      amount: parseFloat(amount) || 0,
+      currency: activeWallet,
       type: 'other',
     });
-    setTitle('');
-    setJpy('');
-    setThb('');
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/20 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-card w-full max-w-xs overflow-hidden shadow-2xl card-enter">
-        <div className="p-6 sakura-gradient text-white">
-          <h3 className="text-xl font-headline font-extrabold tracking-tight">Add Trip Extra</h3>
-          <p className="text-[10px] opacity-70 font-bold uppercase tracking-widest">บันทึกรายการจ่ายหน้างาน</p>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Time (24h)</label>
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="w-full border-0 border-b-2 border-gray-100 focus:ring-0 focus:border-japan-red py-1 font-headline font-bold text-lg outline-none"
-              />
+    <div className="fixed inset-0 z-1000 flex items-end sm:items-center justify-center bg-secondary/80 backdrop-blur-md transition-all duration-300"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="relative w-full sm:max-w-md bg-white sm:rounded-[3rem] rounded-t-[3rem] overflow-hidden shadow-2xl animate-slide-up pb-safe"
+        onClick={e => e.stopPropagation()}>
+        
+        {/* Header Section */}
+        <div className={`pt-10 px-8 pb-6 relative overflow-hidden ${isJpy ? 'bg-blue-50/50' : 'bg-red-50/50'}`}>
+          <div className="relative z-10 flex justify-between items-start">
+            <div>
+              <h3 className="text-2xl font-headline font-black text-secondary">Add Trip Extra</h3>
+              <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isJpy ? 'text-blue-500' : 'text-japan-red'}`}>
+                Spending from {isJpy ? '¥ JPY' : '฿ THB'} Wallet
+              </p>
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-gray-300 uppercase tracking-widest">¥ JPY (ถ้ามี)</label>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
+              isJpy ? 'bg-blue-500 shadow-blue-500/20' : 'bg-japan-red shadow-japan-red/20'
+            }`}>
+              <span className="material-symbols-outlined">receipt_long</span>
+            </div>
+          </div>
+          <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-400 hover:bg-black/5 rounded-full transition-colors">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div className="px-8 pt-8 pb-10 space-y-6">
+          {/* Amount Input - Prominent */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Spending Amount</label>
+            <div className={`flex items-center justify-center gap-4 bg-gray-50 rounded-4xl px-6 py-6 border-2 transition-all shadow-inner focus-within:bg-white ${
+              isJpy ? 'border-blue-50 focus-within:border-blue-500' : 'border-red-50 focus-within:border-japan-red'
+            }`}>
+              <span className={`text-3xl font-black ${isJpy ? 'text-blue-500' : 'text-japan-red'}`}>{isJpy ? '¥' : '฿'}</span>
               <input
                 type="number"
                 placeholder="0"
-                value={jpy}
-                onChange={(e) => setJpy(e.target.value)}
-                className="w-full border-0 border-b-2 border-gray-100 focus:ring-0 focus:border-japan-red py-1 font-headline font-bold text-lg outline-none"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                autoFocus
+                className="flex-1 bg-transparent border-0 focus:ring-0 font-headline font-black text-4xl outline-none text-secondary text-center w-full"
               />
             </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Item Name</label>
-            <input
-              type="text"
-              placeholder="แวะซื้ออะไรดี?"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full border-0 border-b-2 border-gray-100 focus:ring-0 focus:border-japan-red py-1 font-body text-sm outline-none text-gray-700"
-            />
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Time */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Time</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">schedule</span>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={e => setTime(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Title / Description */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Category</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">local_mall</span>
+                <input
+                  type="text"
+                  placeholder="Items..."
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none"
+                />
+              </div>
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Amount (฿ THB)</label>
-            <input
-              type="number"
-              placeholder="0.00"
-              value={thb}
-              onChange={(e) => setThb(e.target.value)}
-              className="w-full border-0 border-b-2 border-gray-100 focus:ring-0 focus:border-japan-red py-1 font-headline font-extrabold text-xl outline-none text-japan-red"
-            />
-          </div>
-          <div className="flex gap-3 pt-4">
-            <button onClick={onClose} className="flex-1 py-3 text-[10px] font-black uppercase text-gray-400 tracking-widest">Cancel</button>
-            <button onClick={handleSubmit} className="flex-1 py-3 sakura-gradient text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-japan-red/20 tracking-widest">Save Extra</button>
+
+          {/* Actions */}
+          <div className="pt-4 space-y-3">
+            <button
+              onClick={handleSubmit}
+              className={`w-full py-4 rounded-3xl text-sm font-black uppercase tracking-widest text-white shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                isJpy ? 'bg-blue-500 shadow-blue-500/30' : 'sakura-gradient shadow-japan-red/30'
+              }`}
+            >
+              <span className="material-symbols-outlined">save</span> Confirm Expense
+            </button>
+            <button onClick={onClose} className="w-full py-2 text-[11px] font-black uppercase text-gray-400 tracking-widest text-center hover:text-secondary transition-colors">
+              Cancel & Return
+            </button>
           </div>
         </div>
       </div>

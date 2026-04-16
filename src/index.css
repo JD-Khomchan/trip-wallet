@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Global Overflow Fix */
+html, body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  position: relative;
+}
+
 @theme {
   --color-primary: #059669;
   --color-secondary: #535c85;
@@ -18,9 +25,20 @@
     0% { transform: scale(1); opacity: 0.8; }
     100% { transform: scale(2.5); opacity: 0; }
   }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 }
 
 @layer base {
+  html, body {
+    @apply overflow-x-hidden w-full;
+  }
   body {
     @apply bg-surface text-secondary font-body selection:bg-japan-red/10;
   }
@@ -47,7 +65,7 @@
 
   .enso-ring {
     border: 4px solid #e2e8f0;
-    border-top-color: #japan-red;
+    border-top-color: var(--color-japan-red);
     transition: border-top-color 0.3s ease;
   }
 
@@ -59,6 +77,15 @@
     width: 2px;
     background: #e2e8f0;
     z-index: 0;
+    overflow: hidden;
+  }
+  .timeline-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #059669;
+    transition: height 1s linear;
   }
   .line-past {
     background: #059669 !important;
@@ -82,6 +109,13 @@
 
   .card-enter {
     animation: fadeInUp 0.4s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
   }
 
   .no-scrollbar::-webkit-scrollbar {

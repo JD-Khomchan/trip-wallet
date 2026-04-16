@@ -53,19 +53,37 @@ export interface ExtraItem {
   id: string;
   time: string;
   title: string;
-  jpy: number;
-  thb: number;
+  amount: number;
+  currency: 'thb' | 'jpy';
   type: string;
   desc?: string;
-  image?: string;
-  mapUrl?: string;
-  guide?: string;
   planMainId?: string;
 }
 
+export interface PlannedItem {
+  paid: boolean;
+  actual: number;
+  currency: 'thb' | 'jpy';
+}
+
+export interface WalletState {
+  thb: number;
+  jpy: number;
+}
+
+export interface ExchangeRecord {
+  id: string;
+  date: string;
+  thb: number;
+  jpy: number;
+  rate: number;
+}
+
 export interface UserState {
-  planned: Record<string, { paid: boolean; actual: number }>;
+  planned: Record<string, PlannedItem>;
   extras: ExtraItem[];
+  wallet: WalletState;
+  exchanges: ExchangeRecord[];
 }
 
 export type TabId = 'summary' | string;

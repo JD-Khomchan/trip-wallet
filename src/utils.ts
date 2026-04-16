@@ -23,8 +23,8 @@ export const getItemStatus = (
   const timeNow = now.getHours() * 60 + now.getMinutes();
   const [h, mn] = itemTime.split(':').map(Number);
   const timeItem = h * 60 + mn;
-  if (timeNow > timeItem + 30) return 'past';
-  if (timeNow >= timeItem - 15 && timeNow <= timeItem + 30) return 'current';
+  if (timeNow > timeItem) return 'past';
+  if (timeNow >= timeItem && timeNow <= timeItem + 30) return 'current';
   return 'future';
 };
 
