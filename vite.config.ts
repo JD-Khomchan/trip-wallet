@@ -42,7 +42,7 @@ export default defineConfig({
         background_color: '#f8f7f5',
         display: 'standalone',
         icons: [
-          { src: '/trip-wallet/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
+          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
         ],
       },
     }),
