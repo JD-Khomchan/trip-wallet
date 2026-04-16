@@ -181,13 +181,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                   isActive
                     ? 'bg-white border-secondary shadow-lg shadow-secondary/30 -translate-y-1 scale-105'
                     : isToday
-                    ? 'bg-white border-japan-red shadow-japan-red/20 scale-105'
+                    ? 'bg-japan-red/10 border-japan-red/20'
+                    : isPast
+                    ? 'bg-primary/5 border-gray-100'
                     : 'bg-white border-gray-100 hover:border-secondary/30'
                 }`}
               >
-                {isToday && (
-                  <span className="absolute inset-0 rounded-2xl border-2 border-japan-red animate-ping opacity-20 pointer-events-none" />
-                )}
                 <div className={`h-5 w-full flex items-center justify-center ${
                   isToday ? 'sakura-gradient text-white'
                   : isPast ? 'bg-primary/20 text-primary'
