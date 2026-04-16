@@ -13,7 +13,7 @@ const MONTH_NAMES = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT'
 function getDayOfWeek(dateStr?: string): string {
   if (!dateStr) return '';
   const [d, m] = dateStr.split('/').map(Number);
-  const year = 2025;
+  const year = new Date().getFullYear();
   const date = new Date(year, m - 1, d);
   return DAY_NAMES[date.getDay()];
 }
