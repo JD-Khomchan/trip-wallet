@@ -30,7 +30,7 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose, onConfirm, cur
   };
 
   const handleQuickAdd = (val: number) => {
-    setAmount((parseFloat(amount) || 0 + val).toString());
+    setAmount(((parseFloat(amount) || 0) + val).toString());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
