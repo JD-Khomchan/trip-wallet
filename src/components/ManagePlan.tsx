@@ -10,76 +10,35 @@ interface ManagePlanProps {
 
 const TYPES = ['transport', 'flight', 'hotel', 'food', 'car', 'activity', 'other'];
 
-const TYPE_COLORS: Record<string, string> = {
-  flight:    'border-l-japan-red bg-japan-red/[0.02]',
-  transport: 'border-l-blue-500 bg-blue-50/30',
-  activity:  'border-l-violet-500 bg-violet-50/30',
-  hotel:     'border-l-primary bg-primary/[0.02]',
-  food:      'border-l-accent bg-orange-50/30',
-  car:       'border-l-gray-500 bg-gray-50/30',
-  other:     'border-l-gray-400 bg-gray-50/30',
-};
-const TYPE_BADGE: Record<string, string> = {
-  flight:    'bg-japan-red/10 text-japan-red',
-  transport: 'bg-blue-100/80 text-blue-600',
-  activity:  'bg-violet-100/80 text-violet-600',
-  hotel:     'bg-primary/10 text-primary',
-  food:      'bg-orange-100/80 text-accent',
-  car:       'bg-gray-100/80 text-gray-600',
-  other:     'bg-gray-100 text-gray-500',
+const TYPE_COLOR: Record<string, string> = {
+  flight: 'text-japan-red', transport: 'text-blue-500', activity: 'text-violet-500',
+  hotel: 'text-primary', food: 'text-accent', car: 'text-gray-500', other: 'text-gray-400',
 };
 
 const emptyItemForm = { title: '', amount: 0, currency: 'thb' as 'thb' | 'jpy', type: 'transport', desc: '', time: '09:00', image: '', mapUrl: '', guide: '' };
-const emptyPlanMainForm = { title: '', date: '', jpy: 0, thb: 0, type: 'activity', desc: '', image: '', mapUrl: '', guide: '' };
+const emptyPlanMainForm = { title: '', date: '', type: 'activity', desc: '', image: '' };
 
 const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) => {
-  // Accordion open state
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['summary']));
-
-  // Item form state (for summary items & schedule items)
   const [showForm, setShowForm] = useState(false);
-  const [formContext, setFormContext] = useState<'summary' | string>('summary'); // planMain id or 'summary'
+  const [formContext, setFormContext] = useState<'summary' | string>('summary');
   const [editing, setEditing] = useState<(SummaryItem | ScheduleItem) | null>(null);
   const [form, setForm] = useState(emptyItemForm);
   const [isNew, setIsNew] = useState(false);
 
-  // PlanMain form state
   const [showPlanMainForm, setShowPlanMainForm] = useState(false);
   const [planMainForm, setPlanMainForm] = useState(emptyPlanMainForm);
   const [editingPlanMain, setEditingPlanMain] = useState<PlanMain | null>(null);
   const [isNewPlanMain, setIsNewPlanMain] = useState(false);
 
-  const toggleSection = (id: string) => {
-    setOpenSections(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  // --- Item CRUD ---
   const openAddItem = (context: string) => {
-    setFormContext(context);
-    setForm(emptyItemForm);
-    setEditing(null);
-    setIsNew(true);
-    setShowForm(true);
+    setFormContext(context); setForm(emptyItemForm); setEditing(null); setIsNew(true); setShowForm(true);
   };
-
   const openEditItem = (item: SummaryItem | ScheduleItem, context: string) => {
-    setFormContext(context);
-    setEditing(item);
+    setFormContext(context); setEditing(item);
     const currency: 'thb' | 'jpy' = item.jpy > 0 && item.thb === 0 ? 'jpy' : 'thb';
-    setForm({
-      title: item.title, amount: currency === 'jpy' ? item.jpy : item.thb, currency,
-      type: item.type,
-      desc: item.desc || '', time: (item as ScheduleItem).time || '09:00',
-      image: item.image || '', mapUrl: item.mapUrl || '', guide: item.guide || '',
-    });
-    setIsNew(false);
-    setShowForm(true);
+    setForm({ title: item.title, amount: currency === 'jpy' ? item.jpy : item.thb, currency, type: item.type, desc: item.desc || '', time: (item as ScheduleItem).time || '09:00', image: item.image || '', mapUrl: item.mapUrl || '', guide: item.guide || '' });
+    setIsNew(false); setShowForm(true);
   };
-
   const handleSaveItem = () => {
     if (!form.title.trim()) return;
     const jpy = form.currency === 'jpy' ? form.amount : 0;
@@ -90,509 +49,293 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
         : plan.summary.map(i => i.id === editing?.id ? { ...i, ...form, jpy, thb } : i);
       onPlanUpdate({ ...plan, summary: updatedSummary });
     } else {
-      const updatedPlanMains = plan.planMains.map(pm => {
+      onPlanUpdate({ ...plan, planMains: plan.planMains.map(pm => {
         if (pm.id !== formContext) return pm;
         const updatedSchedules = isNew
           ? [...pm.schedules, { id: 'sc_' + Date.now(), time: form.time, title: form.title, jpy, thb, type: form.type, desc: form.desc, image: form.image, mapUrl: form.mapUrl, guide: form.guide } as ScheduleItem].sort((a, b) => a.time.localeCompare(b.time))
           : pm.schedules.map(i => i.id === editing?.id ? { ...i, ...form, jpy, thb } : i);
         return { ...pm, schedules: updatedSchedules };
-      });
-      onPlanUpdate({ ...plan, planMains: updatedPlanMains });
+      })});
     }
     setShowForm(false);
   };
-
   const handleDeleteItem = (id: string, context: string) => {
     if (!confirm('ลบรายการนี้?')) return;
-    if (context === 'summary') {
-      onPlanUpdate({ ...plan, summary: plan.summary.filter(i => i.id !== id) });
-    } else {
-      onPlanUpdate({ ...plan, planMains: plan.planMains.map(pm => pm.id === context ? { ...pm, schedules: pm.schedules.filter(i => i.id !== id) } : pm) });
-    }
+    if (context === 'summary') onPlanUpdate({ ...plan, summary: plan.summary.filter(i => i.id !== id) });
+    else onPlanUpdate({ ...plan, planMains: plan.planMains.map(pm => pm.id === context ? { ...pm, schedules: pm.schedules.filter(i => i.id !== id) } : pm) });
   };
 
-  // --- PlanMain CRUD ---
-  const openAddPlanMain = () => {
-    setPlanMainForm(emptyPlanMainForm);
-    setEditingPlanMain(null);
-    setIsNewPlanMain(true);
-    setShowPlanMainForm(true);
-  };
-
-  const openEditPlanMain = (pm: PlanMain) => {
-    setEditingPlanMain(pm);
-    setPlanMainForm({ title: pm.title, date: pm.date || '', jpy: pm.jpy, thb: pm.thb, type: pm.type, desc: pm.desc || '', image: pm.image || '', mapUrl: pm.mapUrl || '', guide: pm.guide || '' });
-    setIsNewPlanMain(false);
-    setShowPlanMainForm(true);
-  };
-
-  const sortByDate = (mains: PlanMain[]) =>
-    [...mains].sort((a, b) => {
-      const toNum = (d?: string) => {
-        if (!d) return 9999;
-        const [dd, mm] = d.split('/').map(Number);
-        return (mm || 0) * 100 + (dd || 0);
-      };
-      return toNum(a.date) - toNum(b.date);
-    });
-
+  const openAddPlanMain = () => { setPlanMainForm(emptyPlanMainForm); setEditingPlanMain(null); setIsNewPlanMain(true); setShowPlanMainForm(true); };
+  const openEditPlanMain = (pm: PlanMain) => { setEditingPlanMain(pm); setPlanMainForm({ title: pm.title, date: pm.date || '', type: pm.type, desc: pm.desc || '', image: pm.image || '' }); setIsNewPlanMain(false); setShowPlanMainForm(true); };
+  const sortByDate = (mains: PlanMain[]) => [...mains].sort((a, b) => {
+    const toNum = (d?: string) => { if (!d) return 9999; const [dd, mm] = d.split('/').map(Number); return mm * 100 + dd; };
+    return toNum(a.date) - toNum(b.date);
+  });
   const handleSavePlanMain = () => {
     if (!planMainForm.title.trim()) return;
     if (isNewPlanMain) {
-      const newPm: PlanMain = { id: 'pm_' + Date.now(), title: planMainForm.title, date: planMainForm.date || undefined, jpy: planMainForm.jpy, thb: planMainForm.thb, type: planMainForm.type, desc: planMainForm.desc, image: planMainForm.image, mapUrl: planMainForm.mapUrl, guide: planMainForm.guide, schedules: [] };
+      const newPm: PlanMain = { id: 'pm_' + Date.now(), title: planMainForm.title, date: planMainForm.date || undefined, jpy: 0, thb: 0, type: planMainForm.type, desc: planMainForm.desc, image: planMainForm.image, mapUrl: '', guide: '', schedules: [] };
       onPlanUpdate({ ...plan, planMains: sortByDate([...plan.planMains, newPm]) });
-      setOpenSections(prev => new Set([...prev, newPm.id]));
     } else if (editingPlanMain) {
-      const updated = plan.planMains.map(pm => pm.id === editingPlanMain.id ? { ...pm, title: planMainForm.title, date: planMainForm.date || undefined, jpy: planMainForm.jpy, thb: planMainForm.thb, type: planMainForm.type, desc: planMainForm.desc, image: planMainForm.image, mapUrl: planMainForm.mapUrl, guide: planMainForm.guide } : pm);
-      onPlanUpdate({ ...plan, planMains: sortByDate(updated) });
+      onPlanUpdate({ ...plan, planMains: sortByDate(plan.planMains.map(pm => pm.id === editingPlanMain.id ? { ...pm, ...planMainForm, date: planMainForm.date || undefined } : pm)) });
     }
     setShowPlanMainForm(false);
   };
-
   const handleDeletePlanMain = (id: string) => {
-    if (!confirm('ลบ Plan Main นี้และ Schedule ทั้งหมดข้างใน?')) return;
+    if (!confirm('ลบวันนี้และ schedule ทั้งหมด?')) return;
     onPlanUpdate({ ...plan, planMains: plan.planMains.filter(pm => pm.id !== id) });
   };
 
-  // --- Render helpers ---
-  const renderSummaryRow = (item: SummaryItem) => (
-    <div key={item.id} 
-      onClick={() => openEditItem(item, 'summary')}
-      className="flex items-center gap-4 py-4 px-5 rounded-4xl hover:bg-white hover:shadow-xl hover:shadow-secondary/5 hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-50 cursor-pointer active:scale-98">
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-black/5 transition-transform group-hover:rotate-3 ${TYPE_BADGE[item.type] || TYPE_BADGE.other}`}>
-        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{getIcon(item.type)}</span>
-      </div>
-      <div className="flex-1 min-w-0 py-1">
-        <p className="text-[14px] font-black text-secondary leading-tight wrap-break-word line-clamp-2 mb-1">{item.title}</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[8px] font-black uppercase tracking-widest text-secondary/40 bg-secondary/5 px-2 py-0.5 rounded-md leading-none border border-secondary/5">{item.type}</span>
-          {item.desc && <span className="text-[10px] font-bold text-gray-400/70 truncate max-w-[180px] italic">{item.desc}</span>}
-        </div>
-      </div>
-      <div className="text-right shrink-0">
-        {item.jpy > 0 && item.thb === 0
-          ? <p className="text-[14px] font-black text-blue-500 font-headline">¥{item.jpy.toLocaleString()}</p>
-          : <p className="text-[14px] font-black text-japan-red font-headline">฿{item.thb.toLocaleString()}</p>}
-      </div>
-      <div className="flex gap-1 shrink-0 ml-1">
-        <button 
-          onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id, 'summary'); }} 
-          className="w-9 h-9 flex items-center justify-center rounded-2xl bg-red-50/80 text-red-500/60 hover:text-red-500 hover:bg-red-100 transition-all active:scale-90 shadow-sm">
-          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
-        </button>
-      </div>
-    </div>
-  );
+  const sortedMains = sortByDate(plan.planMains || []);
 
-  const renderScheduleRow = (item: ScheduleItem, pmId: string) => (
-    <div key={item.id} 
-      onClick={() => openEditItem(item, pmId)}
-      className="flex items-center gap-4 py-4 px-5 rounded-4xl hover:bg-white hover:shadow-xl hover:shadow-secondary/5 hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-50 cursor-pointer active:scale-98">
-      <div className="flex flex-col items-end shrink-0 w-12 border-r border-gray-100 pr-3 mr-1">
-        <span className="text-[12px] font-black text-secondary font-headline leading-none">{item.time}</span>
-        <span className="text-[7px] font-black text-gray-300 uppercase tracking-tighter mt-1">ARRIVAL</span>
-      </div>
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-black/5 transition-transform group-hover:rotate-3 ${TYPE_BADGE[item.type] || TYPE_BADGE.other}`}>
-        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{getIcon(item.type)}</span>
-      </div>
-      <div className="flex-1 min-w-0 py-1">
-        <p className="text-[14px] font-black text-secondary leading-tight wrap-break-word line-clamp-2 mb-1">{item.title}</p>
-        {item.desc && <p className="text-[10px] font-bold text-gray-400/70 line-clamp-1 italic">{item.desc}</p>}
-      </div>
-      <div className="text-right shrink-0">
-        {item.jpy > 0 && item.thb === 0
-          ? <p className="text-[14px] font-black text-blue-500 font-headline">¥{item.jpy.toLocaleString()}</p>
-          : <p className="text-[14px] font-black text-japan-red font-headline">฿{item.thb.toLocaleString()}</p>}
-      </div>
-      <div className="flex gap-1 shrink-0 ml-1">
-        <button 
-          onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id, pmId); }} 
-          className="w-9 h-9 flex items-center justify-center rounded-2xl bg-red-50/80 text-red-500/60 hover:text-red-500 hover:bg-red-100 transition-all active:scale-90 shadow-sm">
-          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
-        </button>
-      </div>
-    </div>
-  );
+  const inputCls = "w-full bg-gray-50 border border-transparent rounded-2xl px-5 py-3.5 text-sm font-medium focus:bg-white focus:border-gray-200 transition-all outline-none";
+  const labelCls = "block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5";
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="fixed top-0 w-full z-100 glass-header border-b border-gray-100 shadow-sm"
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur border-b border-gray-100"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-2xl mx-auto px-5 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={onBack} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white shadow-sm border border-gray-100 text-secondary hover:bg-gray-50 hover:-translate-x-1 active:scale-90 transition-all">
+        <div className="max-w-lg mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-secondary transition-colors">
               <span className="material-symbols-outlined text-xl">arrow_back</span>
             </button>
-            <div className="flex flex-col">
-              <h1 className="font-headline font-black text-xl text-secondary leading-none tracking-tight">Manage Plan</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
-                  {plan.planMains?.length || 0} Sets · {(plan.summary?.length || 0)} Fixed
-                </span>
-                <div className="h-0.5 w-3 bg-gray-200"></div>
-              </div>
+            <div>
+              <h1 className="font-headline font-black text-[15px] text-secondary tracking-tight leading-none">Manage Plan</h1>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{plan.planMains?.length || 0} days · {plan.summary?.length || 0} fixed</p>
             </div>
           </div>
           <button
-            onClick={() => { if (confirm('โหลด Template ใหม่? ข้อมูลปัจจุบันจะถูกแทนที่')) onPlanUpdate(TRIP_BLUEPRINT); }}
-            className="flex items-center gap-2 bg-secondary text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-2xl shadow-lg shadow-secondary/20 hover:scale-105 active:scale-95 transition-all text-center">
-            <span className="material-symbols-outlined text-sm">restore</span> Restore
+            onClick={() => { if (confirm('Reset ข้อมูลทั้งหมด?')) onPlanUpdate(TRIP_BLUEPRINT); }}
+            className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-secondary transition-colors px-3 py-2 rounded-xl hover:bg-gray-50">
+            Reset
           </button>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-5 pb-32 space-y-4"
-        style={{ paddingTop: 'calc(6.5rem + env(safe-area-inset-top))' }}>
+      <main className="max-w-lg mx-auto px-6 pb-32"
+        style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top))' }}>
 
-        {/* Summary Accordion */}
-        <div className="bg-white rounded-4xl shadow-xl shadow-secondary/5 overflow-hidden border border-gray-100 card-enter hover:shadow-2xl hover:shadow-secondary/10 hover:scale-[1.01] transition-all duration-500 relative group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700"></div>
-          
-          <button
-            onClick={() => toggleSection('summary')}
-            className="w-full relative z-10 flex items-center gap-4 px-6 py-6 text-left transition-colors hover:bg-gray-50/5">
-            <div className="w-12 h-12 rounded-2xl bg-secondary/5 flex items-center justify-center shrink-0 border border-secondary/10 shadow-sm transition-transform group-hover:rotate-6">
-              <span className="material-symbols-outlined text-secondary" style={{ fontSize: '24px' }}>payments</span>
-            </div>
-            <div className="flex-1">
-              <p className="font-headline font-black text-lg text-secondary tracking-tight">Fixed Expenses Control</p>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  {plan.summary?.length || 0} items
-                </p>
-                <div className="w-1 h-1 rounded-full bg-gray-200"></div>
-                <p className="text-[10px] font-black text-japan-red uppercase tracking-widest">
-                  ฿{(plan.summary || []).reduce((s, i) => s + i.thb, 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-            <div className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-500 ${openSections.has('summary') ? 'bg-secondary text-white shadow-lg shadow-secondary/20' : 'bg-gray-50 text-gray-300'}`}>
-              <span className="material-symbols-outlined text-sm leading-none font-black"
-                style={{ transform: openSections.has('summary') ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                expand_more
+        {/* Fixed Expenses */}
+        <div className="mb-8 pt-2">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-300">Fixed Expenses</p>
+            <button onClick={() => openAddItem('summary')}
+              className="text-[10px] font-black text-secondary uppercase tracking-widest flex items-center gap-1 hover:opacity-70 transition-opacity">
+              <span className="material-symbols-outlined text-sm">add</span> Add
+            </button>
+          </div>
+
+          {(plan.summary || []).length === 0 ? (
+            <p className="text-[11px] text-gray-300 italic py-3">ยังไม่มีรายการ</p>
+          ) : (plan.summary || []).map(item => (
+            <div key={item.id} className="flex items-baseline gap-3 py-2.5 border-b border-gray-50 group">
+              <span className={`material-symbols-outlined shrink-0 text-sm ${TYPE_COLOR[item.type] || 'text-gray-300'}`} style={{ fontSize: '14px' }}>{getIcon(item.type)}</span>
+              <button onClick={() => openEditItem(item, 'summary')} className="flex-1 text-left min-w-0">
+                <span className="text-[13px] text-secondary font-medium">{item.title}</span>
+                {item.desc && <span className="text-[11px] text-gray-400 italic ml-2">{item.desc}</span>}
+              </button>
+              <span className={`text-[13px] font-black shrink-0 ${item.jpy > 0 && item.thb === 0 ? 'text-blue-500' : 'text-japan-red'}`}>
+                {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
               </span>
-            </div>
-          </button>
-          
-          {openSections.has('summary') && (
-            <div className="relative z-10 border-t border-gray-50 px-4 pb-6 bg-gray-50/10">
-              <div className="mt-4 space-y-1">
-                {(plan.summary || []).length === 0 ? (
-                    <div className="py-10 text-center bg-white/50 rounded-3xl border-2 border-dashed border-gray-100 mx-2">
-                        <span className="material-symbols-outlined text-gray-200 text-3xl mb-1">payments</span>
-                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">No entries found</p>
-                    </div>
-                ) : (plan.summary || []).map(renderSummaryRow)}
-              </div>
-              <button onClick={() => openAddItem('summary')}
-                className="w-full mt-4 py-4 text-[11px] font-black uppercase tracking-widest text-primary flex items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95 group/add">
-                <span className="material-symbols-outlined text-lg transition-transform group-hover/add:rotate-90">add_circle</span> 
-                <span>Add Record Entry</span>
+              <button onClick={() => handleDeleteItem(item.id, 'summary')} className="opacity-0 group-hover:opacity-100 transition-opacity text-red-300 hover:text-red-500 shrink-0">
+                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
               </button>
             </div>
-          )}
+          ))}
+          <div className="mt-4 h-px bg-gray-100" />
         </div>
 
-        {(plan.planMains || []).map((pm, idx) => {
-          const isOpen = openSections.has(pm.id);
-          const colorClass = TYPE_COLORS[pm.type] || TYPE_COLORS.other;
-          const totalThb = (pm.schedules || []).reduce((s, i) => s + i.thb, 0);
-          return (
-            <div key={pm.id} 
-              className={`bg-white rounded-4xl shadow-xl shadow-secondary/5 overflow-hidden border-y border-r border-gray-100 border-l-[6px] card-enter hover:shadow-2xl hover:shadow-secondary/10 hover:scale-[1.01] transition-all duration-500 relative group ${colorClass}`}
-              style={{ animationDelay: `${(idx + 1) * 0.05}s` }}>
-              
-              <div className="absolute top-0 right-0 w-24 h-24 bg-black/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-125 duration-700"></div>
-
-              {/* Plan Main Header */}
-              <div className="flex items-center gap-3 px-6 py-6 relative z-10">
-                <button onClick={() => toggleSection(pm.id)} className="flex items-center gap-3 flex-1 text-left min-w-0 group/header">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-black/5 transition-transform group-hover/header:rotate-3 ${TYPE_BADGE[pm.type] || TYPE_BADGE.other}`}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{getIcon(pm.type)}</span>
-                  </div>
-                  <div className="flex-1 min-w-0" onClick={(e) => { e.stopPropagation(); openEditPlanMain(pm); }}>
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <p className="font-headline font-black text-lg text-secondary group-hover:text-primary transition-colors tracking-tight leading-tight shrink-0">{pm.title}</p>
-                        {pm.date && (
-                          <span className="text-[10px] font-black text-white sakura-gradient px-3 py-1 rounded-xl shadow-md shadow-japan-red/20 shrink-0 uppercase tracking-widest">
-                            {pm.date}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                          {pm.schedules?.length || 0} events
-                        </p>
-                        {totalThb > 0 && (
-                          <>
-                            <div className="w-1 h-1 rounded-full bg-gray-200"></div>
-                            <p className="text-[10px] font-black text-japan-red uppercase tracking-widest">฿{totalThb.toLocaleString()}</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-500 ${isOpen ? 'bg-secondary text-white shadow-lg shadow-secondary/20 scale-110' : 'bg-gray-50 text-gray-300'}`}>
-                    <span className="material-symbols-outlined text-sm leading-none font-black"
-                      style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                      expand_more
-                    </span>
-                  </div>
-                </button>
-                
-                {/* Plan main action buttons */}
-                <div className="flex gap-1 shrink-0 ml-2">
-                  <button onClick={() => handleDeletePlanMain(pm.id)} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-red-50 hover:bg-red-500 hover:text-white text-red-400 transition-all hover:scale-105 active:scale-95 shadow-sm">
-                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>delete</span>
+        {/* Days */}
+        {sortedMains.map((pm, idx) => (
+          <div key={pm.id} className="mb-2">
+            <div className="flex gap-5 py-4">
+              {/* Left col */}
+              <div className="shrink-0 w-16 pt-1">
+                <div className="flex items-baseline gap-1 mb-1.5">
+                  <span className="text-[10px] font-black tracking-[0.15em] text-gray-400 uppercase">DAY</span>
+                  <span className="text-[10px] font-black tracking-[0.15em] text-gray-400">{String(idx + 1).padStart(2, '0')}</span>
+                </div>
+                {pm.date && <p className="text-[11px] font-black text-gray-400 tracking-wide">{pm.date}</p>}
+                <div className="flex gap-1 mt-3">
+                  <button onClick={() => openEditPlanMain(pm)} className="text-gray-300 hover:text-secondary transition-colors">
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>edit</span>
+                  </button>
+                  <button onClick={() => handleDeletePlanMain(pm.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
                   </button>
                 </div>
               </div>
 
-              {/* Schedule Items */}
-              {isOpen && (
-                <div className="relative z-10 border-t border-gray-50 px-4 pb-6 bg-gray-50/10">
-                  <div className="mt-4 space-y-1">
-                    {(pm.schedules || []).length === 0 ? (
-                      <div className="py-12 text-center bg-white/40 rounded-4xl border-2 border-dashed border-gray-100 mx-2 my-2">
-                         <span className="material-symbols-outlined text-gray-200 text-4xl mb-2">event_busy</span>
-                         <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">No detailed schedules</p>
-                      </div>
-                    ) : (pm.schedules || []).map(item => renderScheduleRow(item, pm.id))}
-                  </div>
-                  <button onClick={() => openAddItem(pm.id)}
-                    className="w-full mt-4 py-4 text-[11px] font-black uppercase tracking-widest text-primary flex items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95 group/add">
-                    <span className="material-symbols-outlined text-lg transition-transform group-hover/add:rotate-90">add_circle</span> 
-                    <span>Add Day Schedule</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+              {/* Right col */}
+              <div className="flex-1 min-w-0">
+                <h2 className="font-headline font-black text-secondary uppercase tracking-wide leading-tight mb-1"
+                  style={{ fontSize: 'clamp(1rem, 4vw, 1.3rem)', letterSpacing: '0.04em' }}>
+                  {pm.title}
+                </h2>
+                {pm.desc && <p className="text-[11px] text-japan-red font-bold mb-3">{pm.desc}</p>}
 
-        {/* Add Plan Main */}
-        <button onClick={openAddPlanMain}
-          className="w-full py-6 rounded-4xl border-2 border-dashed border-gray-200 bg-white/50 text-[11px] font-black uppercase tracking-widest text-gray-400 flex items-center justify-center gap-3 hover:border-primary hover:text-primary hover:bg-white transition-all active:scale-98 shadow-sm">
-          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
-            <span className="material-symbols-outlined text-lg">add</span>
+                {/* Schedules */}
+                <div className="space-y-2 mt-2">
+                  {(pm.schedules || []).map(item => (
+                    <div key={item.id} className="flex items-baseline gap-3 group">
+                      <span className="font-headline font-black text-[12px] text-secondary shrink-0 w-10 text-right">{item.time}</span>
+                      <button onClick={() => openEditItem(item, pm.id)} className="flex-1 text-left min-w-0">
+                        <span className="text-[13px] text-secondary">{item.title}</span>
+                        {item.desc && <span className="text-[11px] text-gray-400 italic ml-2">{item.desc}</span>}
+                      </button>
+                      {(item.thb > 0 || item.jpy > 0) && (
+                        <span className={`text-[12px] font-black shrink-0 ${item.jpy > 0 && item.thb === 0 ? 'text-blue-400' : 'text-japan-red'}`}>
+                          {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
+                        </span>
+                      )}
+                      <button onClick={() => handleDeleteItem(item.id, pm.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-red-300 hover:text-red-500 shrink-0">
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <button onClick={() => openAddItem(pm.id)}
+                  className="mt-3 text-[10px] font-black text-gray-300 hover:text-secondary uppercase tracking-widest flex items-center gap-1 transition-colors">
+                  <span className="material-symbols-outlined text-sm">add</span> Add schedule
+                </button>
+              </div>
+            </div>
+            <div className="h-px bg-gray-100 ml-20" />
           </div>
-          Add New Set Main
+        ))}
+
+        {/* Add Day */}
+        <button onClick={openAddPlanMain}
+          className="w-full mt-6 py-5 border border-dashed border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 hover:text-secondary hover:border-gray-300 transition-colors flex items-center justify-center gap-2">
+          <span className="material-symbols-outlined text-sm">add</span> Add New Day
         </button>
       </main>
 
+      {/* Item Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-1000 flex items-end sm:items-center justify-center bg-secondary/80 backdrop-blur-md transition-all duration-300" onClick={() => setShowForm(false)}>
-          <div className="bg-white w-full sm:max-w-2xl sm:rounded-[3rem] rounded-t-[3rem] shadow-2xl overflow-y-auto max-h-[92vh] animate-slide-up"
-            onClick={e => e.stopPropagation()}>
-            
-            {/* Header Section */}
-            <div className="pt-10 px-8 pb-6 bg-gray-50/50 relative">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl sakura-gradient flex items-center justify-center text-white shadow-lg">
-                    <span className="material-symbols-outlined">edit_square</span>
-                  </div>
-                  <div>
-                    <h2 className="font-headline font-black text-2xl text-secondary">
-                      {isNew ? (formContext === 'summary' ? 'Add Fixed Item' : 'New Schedule') : 'Edit Details'}
-                    </h2>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mt-1">
-                      {formContext === 'summary' ? 'Fixed Expense Configuration' : 'Itinerary Item Planning'}
-                    </p>
-                  </div>
-                </div>
-                <button onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:bg-black/5 rounded-full transition-colors">
-                  <span className="material-symbols-outlined">close</span>
-                </button>
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowForm(false)}>
+          <div className="bg-white w-full max-w-lg rounded-t-3xl shadow-2xl overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="px-6 pt-8 pb-3 border-b border-gray-100 flex justify-between items-center">
+              <div>
+                <h2 className="font-headline font-black text-xl text-secondary">
+                  {isNew ? (formContext === 'summary' ? 'Add Fixed Item' : 'New Schedule') : 'Edit Item'}
+                </h2>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                  {formContext === 'summary' ? 'Fixed Expense' : 'Schedule Item'}
+                </p>
               </div>
+              <button onClick={() => setShowForm(false)} className="text-gray-300 hover:text-secondary transition-colors p-2">
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
 
-            <div className="px-8 pt-6 pb-12 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="px-6 py-6 space-y-5">
+              <div className={`grid gap-4 ${formContext !== 'summary' ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 {formContext !== 'summary' && (
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Arrival Time</label>
-                    <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">schedule</span>
-                      <input type="time" value={form.time}
-                        onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
-                        className="w-full bg-gray-50 border border-transparent rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none" />
-                    </div>
+                  <div>
+                    <label className={labelCls}>Time</label>
+                    <input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} className={inputCls} />
                   </div>
                 )}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Category Type</label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">category</span>
-                    <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                      className="w-full bg-gray-50 border border-transparent rounded-2xl pl-11 pr-10 py-3.5 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none appearance-none">
-                      {TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-                    </select>
-                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none">expand_more</span>
-                  </div>
+                <div>
+                  <label className={labelCls}>Type</label>
+                  <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={inputCls + ' appearance-none'}>
+                    {TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                  </select>
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Item Title</label>
-                <input type="text" value={form.title} placeholder="Enter item name..."
-                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  className="w-full bg-gray-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none" />
+
+              <div>
+                <label className={labelCls}>Title</label>
+                <input type="text" value={form.title} placeholder="ชื่อรายการ..." onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className={inputCls} />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Currency & Price</label>
+              <div>
+                <label className={labelCls}>Currency & Amount</label>
                 <div className="flex gap-2">
-                  <div className="flex rounded-2xl bg-gray-50 border border-gray-100 p-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, currency: 'thb' }))}
-                      className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${form.currency === 'thb' ? 'bg-japan-red text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>
-                      ฿ THB
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, currency: 'jpy' }))}
-                      className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${form.currency === 'jpy' ? 'bg-blue-500 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>
-                      ¥ JPY
-                    </button>
+                  <div className="flex bg-gray-50 rounded-2xl p-1 shrink-0 border border-gray-100">
+                    <button type="button" onClick={() => setForm(f => ({ ...f, currency: 'thb' }))}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black transition-all ${form.currency === 'thb' ? 'bg-japan-red text-white' : 'text-gray-400'}`}>฿ THB</button>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, currency: 'jpy' }))}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black transition-all ${form.currency === 'jpy' ? 'bg-blue-500 text-white' : 'text-gray-400'}`}>¥ JPY</button>
                   </div>
-                  <div className={`flex-1 flex items-center bg-gray-50 rounded-3xl px-4 py-3.5 border-2 border-transparent transition-all focus-within:bg-white ${form.currency === 'thb' ? 'focus-within:border-japan-red' : 'focus-within:border-blue-500'}`}>
-                    <span className={`font-black mr-2 text-sm ${form.currency === 'thb' ? 'text-japan-red' : 'text-blue-400'}`}>
-                      {form.currency === 'thb' ? '฿' : '¥'}
-                    </span>
-                    <input type="number" value={form.amount || ''}
-                      onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))}
-                      className="w-full bg-transparent border-none focus:outline-none text-xl font-headline font-black text-secondary text-right" />
+                  <div className={`flex-1 flex items-center bg-gray-50 rounded-2xl px-4 border-2 border-transparent focus-within:bg-white transition-all ${form.currency === 'thb' ? 'focus-within:border-japan-red' : 'focus-within:border-blue-500'}`}>
+                    <span className={`font-black mr-2 ${form.currency === 'thb' ? 'text-japan-red' : 'text-blue-400'}`}>{form.currency === 'thb' ? '฿' : '¥'}</span>
+                    <input type="number" value={form.amount || ''} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))}
+                      className="w-full bg-transparent border-none focus:outline-none text-xl font-headline font-black text-secondary text-right py-3" />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Notes & Details</label>
-                <textarea value={form.desc} placeholder="Optional notes..." rows={2}
-                  onChange={e => setForm(f => ({ ...f, desc: e.target.value }))}
-                  className="w-full bg-gray-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none resize-none" />
+              <div>
+                <label className={labelCls}>Notes</label>
+                <textarea value={form.desc} placeholder="Optional..." rows={2} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} className={inputCls + ' resize-none'} />
               </div>
 
-              <div className="space-y-4">
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">route</span>
-                  <input type="text" value={form.guide} placeholder="Guide Steps (e.g. Train > Walk)"
-                    onChange={e => setForm(f => ({ ...f, guide: e.target.value }))}
-                    className="w-full bg-gray-50 border border-transparent rounded-2xl pl-11 pr-4 py-3.5 text-xs font-bold focus:bg-white focus:border-secondary transition-all outline-none" />
-                </div>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">map</span>
-                  <input type="url" value={form.mapUrl} placeholder="Google Maps Link"
-                    onChange={e => setForm(f => ({ ...f, mapUrl: e.target.value }))}
-                    className="w-full bg-gray-50 border border-transparent rounded-2xl pl-11 pr-4 py-3.5 text-xs font-medium focus:bg-white focus:border-secondary transition-all outline-none" />
-                </div>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">image</span>
-                  <input type="url" value={form.image} placeholder="Image URL (Thumbnail)"
-                    onChange={e => setForm(f => ({ ...f, image: e.target.value }))}
-                    className="w-full bg-gray-50 border border-transparent rounded-2xl pl-11 pr-4 py-3.5 text-xs font-medium focus:bg-white focus:border-secondary transition-all outline-none" />
-                </div>
+              <div className="space-y-3">
+                <input type="text" value={form.guide} placeholder="Guide (e.g. Train > Walk)" onChange={e => setForm(f => ({ ...f, guide: e.target.value }))} className={inputCls} />
+                <input type="url" value={form.mapUrl} placeholder="Google Maps URL" onChange={e => setForm(f => ({ ...f, mapUrl: e.target.value }))} className={inputCls} />
+                <input type="url" value={form.image} placeholder="Image URL" onChange={e => setForm(f => ({ ...f, image: e.target.value }))} className={inputCls} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-6">
-                <button onClick={() => setShowForm(false)}
-                  className="py-4 rounded-3xl bg-gray-50 hover:bg-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 transition-all">
-                  Discard
-                </button>
-                <button onClick={handleSaveItem}
-                  className="py-4 rounded-3xl sakura-gradient text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-japan-red/20 transition-all active:scale-95">
-                  Save Changes
-                </button>
+              <div className="grid grid-cols-2 gap-3 pt-2 pb-6">
+                <button onClick={() => setShowForm(false)} className="py-3.5 rounded-2xl bg-gray-50 text-[11px] font-black uppercase tracking-widest text-gray-400">Cancel</button>
+                <button onClick={handleSaveItem} className="py-3.5 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest">Save</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- Plan Main Form Modal --- */}
+      {/* PlanMain Form Modal */}
       {showPlanMainForm && (
-        <div className="fixed inset-0 z-1000 flex items-end sm:items-center justify-center bg-secondary/80 backdrop-blur-md transition-all duration-300" onClick={() => setShowPlanMainForm(false)}>
-          <div className="bg-white w-full sm:max-w-xl sm:rounded-[3rem] rounded-t-[3rem] shadow-2xl overflow-y-auto max-h-[90vh] animate-slide-up"
-            onClick={e => e.stopPropagation()}>
-            
-            <div className="pt-10 px-8 pb-6 bg-gray-50/50 relative">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center text-white shadow-lg">
-                    <span className="material-symbols-outlined">calendar_today</span>
-                  </div>
-                  <div>
-                    <h2 className="font-headline font-black text-2xl text-secondary">
-                      {isNewPlanMain ? 'New Main Set' : 'Edit Main Set'}
-                    </h2>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mt-1">
-                      Group / Day Configuration
-                    </p>
-                  </div>
-                </div>
-                <button onClick={() => setShowPlanMainForm(false)} className="p-2 text-gray-400 hover:bg-black/5 rounded-full transition-colors">
-                  <span className="material-symbols-outlined">close</span>
-                </button>
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowPlanMainForm(false)}>
+          <div className="bg-white w-full max-w-lg rounded-t-3xl shadow-2xl overflow-y-auto max-h-[85vh]" onClick={e => e.stopPropagation()}>
+            <div className="px-6 pt-8 pb-3 border-b border-gray-100 flex justify-between items-center">
+              <div>
+                <h2 className="font-headline font-black text-xl text-secondary">{isNewPlanMain ? 'New Day' : 'Edit Day'}</h2>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Day / Group Configuration</p>
               </div>
+              <button onClick={() => setShowPlanMainForm(false)} className="text-gray-300 hover:text-secondary p-2">
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
 
-            <div className="px-8 pt-6 pb-12 space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2 space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Main Title</label>
-                  <input type="text" value={planMainForm.title} placeholder="e.g. Day 1, Arrival"
-                    onChange={e => setPlanMainForm(f => ({ ...f, title: e.target.value }))}
-                    className="w-full bg-gray-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none" />
+            <div className="px-6 py-6 space-y-5">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className={labelCls}>Title</label>
+                  <input type="text" value={planMainForm.title} placeholder="e.g. Arrival Day" onChange={e => setPlanMainForm(f => ({ ...f, title: e.target.value }))} className={inputCls} />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date</label>
-                  <input type="text" value={planMainForm.date} placeholder="18/05"
-                    onChange={e => setPlanMainForm(f => ({ ...f, date: e.target.value }))}
-                    className="w-full bg-gray-50 border border-transparent rounded-2xl px-4 py-4 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none text-center" />
+                <div>
+                  <label className={labelCls}>Date</label>
+                  <input type="text" value={planMainForm.date} placeholder="18/05" onChange={e => setPlanMainForm(f => ({ ...f, date: e.target.value }))} className={inputCls + ' text-center'} />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Representative Category</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">category</span>
-                  <select value={planMainForm.type} onChange={e => setPlanMainForm(f => ({ ...f, type: e.target.value }))}
-                    className="w-full bg-gray-50 border border-transparent rounded-2xl pl-11 pr-10 py-3.5 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none appearance-none">
-                    {TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-                  </select>
-                  <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none">expand_more</span>
-                </div>
+              <div>
+                <label className={labelCls}>Type</label>
+                <select value={planMainForm.type} onChange={e => setPlanMainForm(f => ({ ...f, type: e.target.value }))} className={inputCls + ' appearance-none'}>
+                  {TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Description (Optional)</label>
-                <input type="text" value={planMainForm.desc} placeholder="Quick summary..."
-                  onChange={e => setPlanMainForm(f => ({ ...f, desc: e.target.value }))}
-                  className="w-full bg-gray-50 border border-transparent rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:border-secondary transition-all outline-none" />
+              <div>
+                <label className={labelCls}>Description</label>
+                <input type="text" value={planMainForm.desc} placeholder="Quick summary..." onChange={e => setPlanMainForm(f => ({ ...f, desc: e.target.value }))} className={inputCls} />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Cover Image URL</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">image</span>
-                  <input type="url" value={planMainForm.image} placeholder="https://..."
-                    onChange={e => setPlanMainForm(f => ({ ...f, image: e.target.value }))}
-                    className="w-full bg-gray-50 border border-transparent rounded-2xl pl-11 pr-4 py-3.5 text-xs font-medium focus:bg-white focus:border-secondary transition-all outline-none" />
-                </div>
+              <div>
+                <label className={labelCls}>Cover Image URL</label>
+                <input type="url" value={planMainForm.image} placeholder="https://..." onChange={e => setPlanMainForm(f => ({ ...f, image: e.target.value }))} className={inputCls} />
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-6">
-                <button onClick={() => setShowPlanMainForm(false)}
-                  className="py-4 rounded-3xl bg-gray-50 hover:bg-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 transition-all">
-                  Discard
-                </button>
-                <button onClick={handleSavePlanMain}
-                  className="py-4 rounded-3xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-secondary/20 transition-all active:scale-95">
-                  Confirm Group
-                </button>
+              <div className="grid grid-cols-2 gap-3 pt-2 pb-6">
+                <button onClick={() => setShowPlanMainForm(false)} className="py-3.5 rounded-2xl bg-gray-50 text-[11px] font-black uppercase tracking-widest text-gray-400">Cancel</button>
+                <button onClick={handleSavePlanMain} className="py-3.5 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest">Save</button>
               </div>
             </div>
           </div>
