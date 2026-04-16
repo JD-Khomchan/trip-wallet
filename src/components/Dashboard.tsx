@@ -64,7 +64,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
         <button onClick={onOpenExchange} 
-          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-2xl bg-white shadow-sm border border-gray-100 text-blue-500 hover:bg-gray-50 active:scale-95 transition-all">
+          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-2xl bg-white shadow-sm border border-gray-100 text-japan-red hover:bg-gray-50 active:scale-95 transition-all">
           <span className="material-symbols-outlined text-lg">currency_exchange</span>
         </button>
       </div>
@@ -74,7 +74,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* --- Active Wallet Card (Big One) --- */}
         <div className="flex-3 bg-white rounded-4xl p-6 shadow-2xl shadow-secondary/10 border border-gray-100 relative overflow-hidden card-enter">
           {/* Background Decor */}
-          <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-[0.03] ${isJpy ? 'bg-blue-500' : 'bg-japan-red'}`}></div>
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-[0.03] bg-japan-red"></div>
           
           <div className="relative z-10 h-full flex flex-col justify-between">
             <div className="flex justify-between items-start">
@@ -82,15 +82,13 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 truncate">
                   {isJpy ? 'Japanese Yen' : 'Thai Baht'} Wallet
                 </p>
-                <h3 className={`text-3xl font-headline font-black ${isJpy ? 'text-blue-500' : 'text-japan-red'} truncate`}>
+                <h3 className="text-3xl font-headline font-black text-japan-red truncate">
                   {isJpy ? '¥' : '฿'}{walletStats[`${activeCurrency}Remaining`].toLocaleString()}
                 </h3>
               </div>
               <button 
                 onClick={(e) => { e.stopPropagation(); onOpenTopup(); }}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-gray-100 transition-all shadow-sm active:scale-90 ${
-                    isJpy ? 'bg-blue-50 text-blue-500 hover:bg-blue-100' : 'bg-red-50 text-japan-red hover:bg-red-100'
-                }`}>
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-gray-100 transition-all shadow-sm active:scale-90 bg-japan-red/5 text-japan-red hover:bg-japan-red/10">
                 <span className="material-symbols-outlined text-xl">add</span>
               </button>
             </div>
@@ -104,18 +102,18 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <span className="text-gray-300 font-bold ml-1 font-headline">/ {isJpy ? '¥' : '฿'}{stats[activeCurrency].plan.toLocaleString()}</span>
                   </p>
                 </div>
-                <span className={`text-[11px] font-black ${isJpy ? 'text-blue-500' : 'text-japan-red'}`}>
+                <span className="text-[11px] font-black text-japan-red">
                   {currentPercent}%
                 </span>
               </div>
               <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div className={`h-full transition-all duration-1000 ${isJpy ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-japan-red shadow-[0_0_8px_rgba(200,34,50,0.5)]'}`}
+                <div className="h-full transition-all duration-1000 bg-japan-red shadow-[0_0_8px_rgba(229,115,153,0.5)]"
                      style={{ width: `${currentPercent}%` }}></div>
               </div>
               {exchangeRate && (
                 <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between">
                   <p className="text-[9px] font-bold text-gray-300 uppercase tracking-wider">Est. Total Plan</p>
-                  <p className={`text-[11px] font-black ${isJpy ? 'text-blue-500' : 'text-japan-red'}`}>
+                  <p className="text-[11px] font-black text-japan-red">
                     {isJpy ? '¥' : '฿'}
                     {isJpy
                       ? Math.round(stats.jpy.plan + stats.thb.plan * exchangeRate).toLocaleString()
@@ -133,7 +131,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           onClick={() => onSwitchCurrency(inactiveCurrency)}
           className="flex-1 bg-gray-50/50 rounded-4xl border border-dashed border-gray-200 p-4 flex flex-col items-center justify-center gap-3 hover:bg-white hover:border-solid hover:shadow-xl hover:shadow-secondary/10 transition-all group opacity-80 hover:opacity-100 active:scale-95"
         >
-          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg transition-all group-hover:scale-110 group-hover:rotate-12 ${inactiveCurrency === 'thb' ? 'bg-japan-red shadow-japan-red/20' : 'bg-blue-500 shadow-blue-500/20'}`}>
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg transition-all group-hover:scale-110 group-hover:rotate-12 bg-primary/80 shadow-primary/20">
             <span className="text-xl font-black">{inactiveCurrency === 'thb' ? '฿' : '¥'}</span>
           </div>
           <div className="text-center overflow-hidden w-full">
@@ -190,7 +188,11 @@ const Dashboard: React.FC<DashboardProps> = ({
                 {isToday && (
                   <span className="absolute inset-0 rounded-2xl border-2 border-japan-red animate-ping opacity-20 pointer-events-none" />
                 )}
-                <div className="h-5 w-full flex items-center justify-center sakura-gradient text-white">
+                <div className={`h-5 w-full flex items-center justify-center ${
+                  isToday ? 'sakura-gradient text-white'
+                  : isPast ? 'bg-primary/20 text-primary'
+                  : 'bg-gray-100 text-gray-400'
+                }`}>
                   <span className="text-[8px] font-black uppercase tracking-widest leading-none">
                     {isToday ? '● TODAY' : monthLabel}
                   </span>
