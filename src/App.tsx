@@ -303,12 +303,6 @@ function App() {
     });
   };
 
-  const handleCurrencyChange = (id: string, currency: 'thb' | 'jpy') => {
-    setUserState(prev => ({
-      ...prev,
-      planned: { ...prev.planned, [id]: { ...(prev.planned[id] || { paid: false, actual: 0, currency }), currency } }
-    }));
-  };
 
   const handlePriceChange = (id: string, price: number) => {
     setUserState(prev => ({
@@ -344,7 +338,7 @@ function App() {
                 paid={userState.planned[item.id]?.paid || false}
                 actual={userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : (cur === 'jpy' ? item.jpy : item.thb)}
                 currency={cur}
-                onTogglePaid={togglePaid} onPriceChange={handlePriceChange} onCurrencyChange={handleCurrencyChange} />
+                onTogglePaid={togglePaid} onPriceChange={handlePriceChange} />
             );
           })}
         </div>
@@ -400,8 +394,7 @@ function App() {
                 paid={item.isExtra ? true : (userState.planned[item.id]?.paid || false)}
                 actual={item.isExtra ? (item.thb || item.jpy) : (userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : (cur === 'jpy' ? item.jpy : item.thb))}
                 currency={cur}
-                onTogglePaid={togglePaid} onPriceChange={handlePriceChange} onCurrencyChange={handleCurrencyChange}
-                onDelete={handleDeleteExtra} isExtra={item.isExtra} />
+                onTogglePaid={togglePaid} onPriceChange={handlePriceChange}                onDelete={handleDeleteExtra} isExtra={item.isExtra} />
             );
           })}
 

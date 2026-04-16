@@ -19,7 +19,6 @@ interface TripCardProps {
   currency: 'thb' | 'jpy';
   onTogglePaid: (id: string, initialPrice: number, currency: 'thb' | 'jpy') => void;
   onPriceChange: (id: string, price: number) => void;
-  onCurrencyChange: (id: string, currency: 'thb' | 'jpy') => void;
   onDelete?: (id: string) => void;
   isExtra?: boolean;
 }
@@ -27,7 +26,7 @@ interface TripCardProps {
 const TripCard: React.FC<TripCardProps> = ({
   id, time, title, jpy, thb, type, desc, image, mapUrl, guide,
   isTimeline, status = 'future', paid, actual, currency,
-  onTogglePaid, onPriceChange, onCurrencyChange, onDelete, isExtra
+  onTogglePaid, onPriceChange, onDelete, isExtra
 }) => {
   const [expanded, setExpanded] = useState(false);
   const hasExtra = image || mapUrl || guide;
