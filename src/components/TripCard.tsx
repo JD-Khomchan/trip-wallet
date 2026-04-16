@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getIcon } from '../constants';
+import { formatAmount } from '../utils';
 
 interface TripCardProps {
   id: string;
   time?: string;
   title: string;
-  jpy: number;
-  thb: number;
+  amount: number;            // plan amount (budget)
+  currency: 'thb' | 'jpy';  // effective currency (plan default or user override)
   type: string;
   desc?: string;
   image?: string;
@@ -15,41 +16,40 @@ interface TripCardProps {
   isTimeline: boolean;
   status?: 'past' | 'current' | 'future';
   paid: boolean;
-  actual: number;
-  currency: 'thb' | 'jpy';
-  onTogglePaid: (id: string, initialPrice: number, currency: 'thb' | 'jpy') => void;
-  onPriceChange: (id: string, price: number) => void;
+  actual: number | null;     // user's actual payment; null = same as plan amount
+  onTogglePaid: (id: string, currency: 'thb' | 'jpy') => void;
+  onPriceChange: (id: string, price: number | null, currency: 'thb' | 'jpy') => void;
   onDelete?: (id: string) => void;
   isExtra?: boolean;
   isMini?: boolean;
 }
 
 const TripCard: React.FC<TripCardProps> = ({
-  id, time, title, jpy, thb, type, desc, image, mapUrl, guide,
-  isTimeline, status = 'future', paid, actual, currency,
+  id, time, title, amount, currency, type, desc, image, mapUrl, guide,
+  isTimeline, status = 'future', paid, actual,
   onTogglePaid, onPriceChange, onDelete, isExtra, isMini
 }) => {
+  // Display amount: use user's actual if set, otherwise fall back to plan amount
+  const displayAmount = actual ?? amount;
+
+  // Local input string — allows free typing without committing on every keystroke
+  const [inputStr, setInputStr] = useState(String(displayAmount));
+  useEffect(() => { setInputStr(String(displayAmount)); }, [displayAmount]);
+
   const [expanded, setExpanded] = useState(false);
   const hasExtra = image || mapUrl || guide;
-
-  let dotClass = "bg-gray-200 border-2 border-gray-100";
-  let textColor = "text-gray-300";
-
-  if (status === 'past') {
-    dotClass = "bg-primary ring-4 ring-primary/10";
-    textColor = "text-primary";
-  }
-  if (status === 'current') {
-    dotClass = "bg-japan-red ring-4 ring-japan-red/10 dot-pulse";
-    textColor = "text-japan-red";
-  }
-  if (status === 'future') {
-    dotClass = "bg-gray-200 border-2 border-white";
-    textColor = "text-gray-300";
-  }
-
   const isJpy = currency === 'jpy';
-  const defaultPrice = isJpy ? jpy : thb;
+
+  let dotClass = 'bg-gray-200 border-2 border-white';
+  let textColor = 'text-gray-300';
+  if (status === 'past')    { dotClass = 'bg-primary ring-4 ring-primary/10'; textColor = 'text-primary'; }
+  if (status === 'current') { dotClass = 'bg-japan-red ring-4 ring-japan-red/10 dot-pulse'; textColor = 'text-japan-red'; }
+
+  const handleBlur = () => {
+    const parsed = parseFloat(inputStr);
+    // Empty or invalid → reset to null (follow plan amount)
+    onPriceChange(id, isNaN(parsed) ? null : parsed, currency);
+  };
 
   const renderTimelineHeader = () => {
     if (!isTimeline) return null;
@@ -105,9 +105,7 @@ const TripCard: React.FC<TripCardProps> = ({
             <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent"></div>
           </div>
         )}
-
         {guide && renderGuideSteps(guide)}
-
         {mapUrl && (
           <a href={mapUrl} target="_blank" rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-3 bg-japan-red/5 hover:bg-japan-red/10 text-japan-red rounded-2xl transition-all active:scale-98 border border-japan-red/10 font-headline font-extrabold text-[11px] uppercase tracking-widest">
@@ -127,7 +125,7 @@ const TripCard: React.FC<TripCardProps> = ({
       data-time={isTimeline ? time : undefined}>
       {renderTimelineHeader()}
 
-      {/* Hero Currency Badge - Unified across Dashboard & Wallet */}
+      {/* Currency badge */}
       <div className={`absolute -top-2 -right-1 flex items-center justify-center rounded-full bg-japan-red text-white font-black shadow-md z-20 border-[3px] border-white animate-in zoom-in duration-500 hover:scale-110 transition-transform ${
         isMini ? 'w-6 h-6 text-[11px]' : 'w-7 h-7 text-[13px]'
       }`}>
@@ -137,11 +135,12 @@ const TripCard: React.FC<TripCardProps> = ({
       <div className={`bg-white shadow-sm border ${borderColor} ${shadowColor} transition-all duration-300 ${isMini ? 'p-4 rounded-3xl' : 'p-4 rounded-3xl hover:scale-[1.01] hover:shadow-lg hover:shadow-secondary/5'}`}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            {/* Icon Box / Paid Toggle */}
+
+            {/* Paid toggle */}
             <button
-              onClick={() => onTogglePaid(id, defaultPrice, currency)}
+              onClick={() => onTogglePaid(id, currency)}
               className={`w-10 h-10 rounded-2xl flex-none flex items-center justify-center transition-all duration-300 shrink-0 relative ${
-                paid ? 'bg-primary text-white' : 'bg-gray-50 text-gray-400 group-hover:text-secondary'
+                paid ? 'bg-primary text-white' : 'bg-gray-50 text-gray-400'
               }`}>
               <span className={`material-symbols-outlined text-xl ${paid ? 'opacity-40' : ''}`}>{getIcon(isExtra ? 'other' : type)}</span>
               {paid && (
@@ -151,29 +150,52 @@ const TripCard: React.FC<TripCardProps> = ({
               )}
             </button>
 
-            {/* Info Block */}
-            <div className="min-w-0 flex-1 flex flex-col justify-center cursor-pointer" onClick={() => hasExtra && !isMini && setExpanded(!expanded)}>
-              <p className={`font-black text-secondary ${isMini ? 'text-xs uppercase tracking-tight' : 'font-headline text-[16px]'} truncate leading-tight`}>{title}</p>
+            {/* Title + desc */}
+            <div className="min-w-0 flex-1 flex flex-col justify-center cursor-pointer"
+              onClick={() => hasExtra && !isMini && setExpanded(!expanded)}>
+              <p className={`font-black text-secondary ${isMini ? 'text-xs uppercase tracking-tight' : 'font-headline text-[16px]'} truncate leading-tight`}>
+                {title}
+              </p>
               <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1.5 leading-none">
                 {isMini ? 'Fixed Expense' : (desc || type)}
               </p>
             </div>
           </div>
 
-          {/* Action Area - Pure Numbers with enhanced size */}
+          {/* Price section */}
           <div className="flex items-center gap-3 shrink-0">
-            <div className="flex items-center font-headline font-black text-japan-red">
-              <input
-                type="number"
-                value={actual !== undefined ? actual : defaultPrice}
-                onChange={(e) => onPriceChange(id, parseFloat(e.target.value) || 0)}
-                className={`bg-transparent border-0 p-0 text-right focus:ring-0 font-black ${
-                  isMini ? 'w-18 text-[18px]' : 'w-24 text-[22px]'
-                }`}
-              />
-            </div>
+            {isMini ? (
+              /* Mini card: single merged display */
+              <div className="flex items-center font-headline font-black text-japan-red">
+                <input
+                  type="number"
+                  value={inputStr}
+                  onChange={e => setInputStr(e.target.value)}
+                  onBlur={handleBlur}
+                  className="bg-transparent border-0 p-0 text-right focus:ring-0 font-black w-18 text-[18px]"
+                />
+              </div>
+            ) : (
+              /* Normal card: plan label + actual input */
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">plan</span>
+                  <span className="text-[11px] font-black text-gray-300 font-headline">
+                    {isJpy ? '¥' : '฿'}{amount.toLocaleString()}
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  value={inputStr}
+                  onChange={e => setInputStr(e.target.value)}
+                  onBlur={handleBlur}
+                  className="bg-transparent border-0 p-0 text-right focus:ring-0 font-headline font-black text-japan-red w-24 text-[22px]"
+                />
+              </div>
+            )}
             {isExtra && (
-              <button onClick={() => onDelete?.(id)} className="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:text-japan-red hover:bg-japan-red/5 transition-all flex items-center justify-center">
+              <button onClick={() => onDelete?.(id)}
+                className="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:text-japan-red hover:bg-japan-red/5 transition-all flex items-center justify-center">
                 <span className="material-symbols-outlined text-base">delete</span>
               </button>
             )}
