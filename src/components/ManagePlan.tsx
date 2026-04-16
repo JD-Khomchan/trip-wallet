@@ -29,6 +29,8 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
   const [isNew, setIsNew] = useState(false);
   const [subTab, setSubTab] = useState<'fixed' | 'itinerary'>('itinerary');
 
+  const [guidePopup, setGuidePopup] = useState<string | null>(null);
+
   const [showPlanMainForm, setShowPlanMainForm] = useState(false);
   const [planMainForm, setPlanMainForm] = useState(emptyPlanMainForm);
   const [editingPlanMain, setEditingPlanMain] = useState<PlanMain | null>(null);
@@ -278,10 +280,14 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
                             </button>
                             <div className="flex items-center gap-1 shrink-0">
                               {item.guide && (
-                                <span className="material-symbols-outlined text-primary" style={{ fontSize: '13px' }}>directions</span>
+                                <button onClick={() => setGuidePopup(item.guide!)} className="text-primary hover:opacity-70 transition-opacity">
+                                  <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>directions</span>
+                                </button>
                               )}
                               {item.mapUrl && (
-                                <span className="material-symbols-outlined text-japan-red" style={{ fontSize: '13px' }}>location_on</span>
+                                <a href={item.mapUrl} target="_blank" rel="noopener noreferrer" className="text-japan-red hover:opacity-70 transition-opacity">
+                                  <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>location_on</span>
+                                </a>
                               )}
                             </div>
                             <span className="text-[11px] font-black shrink-0 text-japan-red font-mono">
@@ -388,6 +394,37 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
                 <button onClick={() => setShowForm(false)} className="py-4 rounded-2xl bg-white border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400">Cancel</button>
                 <button onClick={handleSaveItem} className="py-4 rounded-2xl sakura-gradient text-white text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-japan-red/20">Save</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Guide Popup ── */}
+      {guidePopup && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-secondary/60 backdrop-blur-md px-6"
+          onClick={() => setGuidePopup(null)}>
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                <span className="material-symbols-outlined text-primary" style={{ fontSize: '14px' }}>directions</span>
+                Navigation Guide
+              </p>
+              <button onClick={() => setGuidePopup(null)} className="text-gray-300 hover:text-secondary">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-y-2">
+              {guidePopup.split('>').map(s => s.trim()).filter(Boolean).map((step, i, arr) => (
+                <React.Fragment key={i}>
+                  <div className="bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-xl">
+                    <span className="text-[12px] font-bold text-secondary">{step}</span>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <span className="material-symbols-outlined text-gray-300 text-sm px-0.5">chevron_right</span>
+                  )}
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>
