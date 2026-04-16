@@ -1,8 +1,10 @@
+// ─── Plan Data (shared, admin-managed, stored in trips/main) ──────────────────
+
 export interface SummaryItem {
   id: string;
   title: string;
-  jpy: number;
-  thb: number;
+  amount: number;
+  currency: 'thb' | 'jpy';
   type: string;
   desc?: string;
   image?: string;
@@ -14,8 +16,8 @@ export interface ScheduleItem {
   id: string;
   time: string;
   title: string;
-  jpy: number;
-  thb: number;
+  amount: number;
+  currency: 'thb' | 'jpy';
   type: string;
   desc?: string;
   image?: string;
@@ -27,8 +29,6 @@ export interface PlanMain {
   id: string;
   title: string;
   date?: string;
-  jpy: number;
-  thb: number;
   type: string;
   desc?: string;
   image?: string;
@@ -49,6 +49,17 @@ export interface TripBlueprint {
   planMains: PlanMain[];
 }
 
+// ─── User Tracking Data (per-user, stored in users/{uid}) ────────────────────
+
+export interface PlannedItem {
+  paid: boolean;
+  // null  = user ยังไม่ได้กำหนด → ใช้ plan amount อัตโนมัติ
+  // 0     = user จ่ายจริง 0 บาท/เยน
+  // n > 0 = user จ่ายจริง n บาท/เยน
+  actual: number | null;
+  currency: 'thb' | 'jpy';
+}
+
 export interface ExtraItem {
   id: string;
   time: string;
@@ -58,12 +69,6 @@ export interface ExtraItem {
   type: string;
   desc?: string;
   planMainId?: string;
-}
-
-export interface PlannedItem {
-  paid: boolean;
-  actual: number;
-  currency: 'thb' | 'jpy';
 }
 
 export interface WalletState {

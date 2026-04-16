@@ -1,3 +1,5 @@
+import type { TripBlueprint } from './types';
+
 /** Parse "DD/MM" date string and compare to today */
 export const getDayStatus = (dateStr?: string): 'past' | 'today' | 'future' => {
   if (!dateStr) return 'future';
@@ -36,4 +38,45 @@ export const getAutoTab = (planMains: { id: string; date?: string }[]): string =
   const upcoming = planMains.find(pm => getDayStatus(pm.date) === 'future');
   if (upcoming) return upcoming.id;
   return planMains[planMains.length - 1]?.id || 'summary';
+};
+
+/** Format amount with currency symbol */
+export const formatAmount = (amount: number, currency: 'thb' | 'jpy'): string =>
+  currency === 'jpy' ? `¥${amount.toLocaleString()}` : `฿${amount.toLocaleString()}`;
+
+/**
+ * Migrate old Firestore item format  { thb: number, jpy: number }
+ * to new format                      { amount: number, currency: 'thb' | 'jpy' }
+ * Items already in new format are returned as-is.
+ */
+const migrateItem = (raw: any): any => {
+  if (typeof raw.amount === 'number' && raw.currency) return raw;
+  const currency: 'thb' | 'jpy' = raw.jpy > 0 && raw.thb === 0 ? 'jpy' : 'thb';
+  const { thb: _t, jpy: _j, ...rest } = raw;
+  return { ...rest, amount: currency === 'jpy' ? (raw.jpy ?? 0) : (raw.thb ?? 0), currency };
+};
+
+/**
+ * Migrate a raw Firestore trip document to TripBlueprint.
+ * Handles:
+ *   - old { thb, jpy } item format → { amount, currency }
+ *   - old { days } top-level key   → planMains
+ */
+export const migrateTripBlueprint = (raw: any): TripBlueprint => {
+  const rawMains = raw.planMains ?? raw.days ?? [];
+  return {
+    trip: raw.trip,
+    summary: (raw.summary ?? []).map(migrateItem),
+    planMains: rawMains.map((pm: any) => ({
+      id: pm.id,
+      title: pm.title ?? pm.date,
+      date: pm.date,
+      type: pm.type ?? 'activity',
+      desc: pm.desc,
+      image: pm.image,
+      mapUrl: pm.mapUrl,
+      guide: pm.guide,
+      schedules: (pm.schedules ?? pm.items ?? []).map(migrateItem),
+    })),
+  };
 };
