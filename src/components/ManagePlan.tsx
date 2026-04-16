@@ -313,7 +313,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
             <div className="px-6 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[2.5rem] shrink-0">
               <div className="grid grid-cols-2 gap-4">
                 <button onClick={() => setShowForm(false)} className="py-4 rounded-2xl bg-white border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">Cancel</button>
-                <button onClick={handleSaveItem} className="py-4 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-md shadow-secondary/20">Save</button>
+                <button onClick={handleSaveItem} className="py-4 rounded-2xl sakura-gradient text-white text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-japan-red/20">Save</button>
               </div>
             </div>
           </div>
@@ -370,7 +370,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
             <div className="px-6 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[2.5rem] shrink-0">
               <div className="grid grid-cols-2 gap-4">
                 <button onClick={() => setShowPlanMainForm(false)} className="py-4 rounded-2xl bg-white border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">Cancel</button>
-                <button onClick={handleSavePlanMain} className="py-4 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-md shadow-secondary/20">Save</button>
+                <button onClick={handleSavePlanMain} className="py-4 rounded-2xl sakura-gradient text-white text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-japan-red/20">Save</button>
               </div>
             </div>
           </div>

@@ -83,15 +83,12 @@ const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit, acti
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 px-8 py-5 pb-safe space-y-3 border-t border-gray-100">
-        <button
-          onClick={handleSubmit}
-          className="w-full py-4 rounded-3xl text-sm font-black uppercase tracking-widest text-white shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 sakura-gradient shadow-japan-red/30"
-        >
-          <span className="material-symbols-outlined">save</span> Confirm Expense
+      <div className="shrink-0 px-6 py-5 flex gap-3 border-t border-gray-100" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+        <button onClick={onClose} className="flex-1 py-4 rounded-2xl border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">
+          Cancel
         </button>
-        <button onClick={onClose} className="w-full py-2 text-[11px] font-black uppercase text-gray-400 tracking-widest text-center hover:text-secondary transition-colors">
-          Cancel & Return
+        <button onClick={handleSubmit} className="flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-white sakura-gradient shadow-lg shadow-japan-red/20 active:scale-95 transition-all">
+          Confirm
         </button>
       </div>
     </ModalSheet>
