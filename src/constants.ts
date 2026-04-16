@@ -3,8 +3,8 @@ import type { SummaryItem, PlanMain, TripBlueprint } from './types';
 export const TRIP_BLUEPRINT: TripBlueprint = {
   trip: {
     id: 'trip1',
-    name: 'My Trip',
-    destination: '',
+    name: 'MEE Japan',
+    destination: 'Japan',
   },
   summary: [] as SummaryItem[],
   planMains: [] as PlanMain[],
