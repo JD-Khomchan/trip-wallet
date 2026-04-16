@@ -10,7 +10,8 @@ const ModalSheet: React.FC<ModalSheetProps> = ({ isOpen, onClose, children }) =>
   if (!isOpen) return null;
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center bg-secondary/80 backdrop-blur-md"
+      className="fixed inset-0 z-[1000] flex items-end justify-center bg-secondary/80 backdrop-blur-md pb-4"
+      style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
