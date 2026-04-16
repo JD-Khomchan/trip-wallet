@@ -175,8 +175,16 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
           <div className="space-y-4 mx-1">
             {/* Days Section */}
             {sortedMains.map((pm, idx) => (
-              <div key={pm.id} className="bg-white rounded-[2rem] px-3.5 py-6 shadow-sm border border-gray-100 group transition-all hover:shadow-md">
-                <div className="flex gap-4">
+              <div key={pm.id} className="relative bg-white rounded-[2rem] px-3.5 py-6 shadow-sm border border-gray-100 group transition-all hover:shadow-md overflow-hidden">
+                {/* Background Image with Fade */}
+                {pm.image && (
+                  <div className="absolute top-0 right-0 bottom-0 w-1/2 z-0 pointer-events-none">
+                    <img src={pm.image} alt="" className="w-full h-full object-cover opacity-30" onError={e => e.currentTarget.style.display = 'none'} />
+                    <div className="absolute inset-0 bg-linear-to-r from-white via-white/40 to-transparent"></div>
+                  </div>
+                )}
+
+                <div className="relative z-10 flex gap-4">
                   {/* Left col */}
                   <div className="shrink-0 w-11 text-center pt-1 border-r border-gray-50 pr-3">
                     <div className="flex flex-col items-center">
@@ -197,10 +205,10 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
                         {pm.desc && <p className="text-[10px] text-japan-red/70 font-bold">{pm.desc}</p>}
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => openEditPlanMain(pm)} className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:text-secondary hover:bg-gray-100 transition-all">
+                        <button onClick={() => openEditPlanMain(pm)} className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50/80 backdrop-blur-sm text-gray-400 hover:text-secondary hover:bg-white transition-all shadow-sm">
                           <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
                         </button>
-                        <button onClick={() => handleDeletePlanMain(pm.id)} className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:text-red-400 hover:bg-red-50 transition-all">
+                        <button onClick={() => handleDeletePlanMain(pm.id)} className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50/80 backdrop-blur-sm text-gray-400 hover:text-red-400 hover:bg-white transition-all shadow-sm">
                           <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
                         </button>
                       </div>

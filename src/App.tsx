@@ -15,10 +15,10 @@ import TripOverview from './components/TripOverview';
 import BudgetPlanModal from './components/BudgetPlanModal';
 import { TRIP_BLUEPRINT } from './constants';
 import { getDayStatus, getItemStatus, getAutoTab } from './utils';
-import type { UserState, TabId, ExtraItem, TripBlueprint, ExchangeRecord } from './types';
+import type { UserState, TabId, ExtraItem, TripBlueprint, ExchangeRecord, TopupRecord } from './types';
 import './index.css';
 
-const EMPTY_STATE: UserState = { planned: {}, extras: [], wallet: { thb: 0, jpy: 0 }, exchanges: [] };
+const EMPTY_STATE: UserState = { planned: {}, extras: [], wallet: { thb: 0, jpy: 0 }, exchanges: [], topups: [] };
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -91,6 +91,23 @@ function App() {
       setAuthLoading(false);
     });
   }, []);
+
+  // Migration: Legacy Wallet -> Topup History
+  useEffect(() => {
+    if (!dataLoaded || !userState.wallet) return;
+    const { thb, jpy } = userState.wallet;
+    if (thb > 0 || jpy > 0) {
+      const newTopups: TopupRecord[] = [];
+      if (thb > 0) newTopups.push({ id: 'legacy_thb', currency: 'thb', amount: thb, date: new Date().toISOString() });
+      if (jpy > 0) newTopups.push({ id: 'legacy_jpy', currency: 'jpy', amount: jpy, date: new Date().toISOString() });
+      
+      setUserState(prev => ({
+        ...prev,
+        wallet: { thb: 0, jpy: 0 },
+        topups: [...(prev.topups || []), ...newTopups]
+      }));
+    }
+  }, [dataLoaded]);
 
   // Save user state to Firestore (debounced)
   useEffect(() => {
@@ -172,13 +189,6 @@ function App() {
     return () => { clearInterval(interval); window.removeEventListener('resize', calc); };
   }, [currentTime, currentTab, tripPlan]);
 
-  // Last exchange rate (1 THB = ? JPY)
-  const lastExchangeRate = useMemo(() => {
-    const exchanges = userState.exchanges || [];
-    if (exchanges.length === 0) return null;
-    return exchanges[exchanges.length - 1].rate;
-  }, [userState.exchanges]);
-
   // Sort planMains by date (dd/mm)
   const sortedPlanMains = useMemo(() => {
     if (!tripPlan) return [];
@@ -239,10 +249,14 @@ function App() {
     };
   }, [userState, tripPlan]);
 
-  // Wallet Stats พร้อมรองรับ Exchange
+  // Wallet Stats พร้อมรองรับ Exchange และ Topup History
   const walletStats = useMemo(() => {
-    const wallet = userState.wallet || { thb: 0, jpy: 0 };
+    const topups = userState.topups || [];
     const exchanges = userState.exchanges || [];
+
+    // Calculate total deposited from history + legacy wallet
+    const thbDeposited = topups.filter(t => t.currency === 'thb').reduce((s, t) => s + t.amount, 0) + (userState.wallet?.thb || 0);
+    const jpyDeposited = topups.filter(t => t.currency === 'jpy').reduce((s, t) => s + t.amount, 0) + (userState.wallet?.jpy || 0);
 
     const totalExchangedThb = exchanges.reduce((s, e) => s + e.thb, 0);
     const totalExchangedJpy = exchanges.reduce((s, e) => s + e.jpy, 0);
@@ -264,10 +278,10 @@ function App() {
     });
 
     return {
-      thbRemaining: wallet.thb - totalExchangedThb - spentThb,
-      jpyRemaining: wallet.jpy + totalExchangedJpy - spentJpy,
-      thbDeposited: wallet.thb,
-      jpyDeposited: wallet.jpy,
+      thbRemaining: thbDeposited - totalExchangedThb - spentThb,
+      jpyRemaining: jpyDeposited + totalExchangedJpy - spentJpy,
+      thbDeposited,
+      jpyDeposited,
     };
   }, [userState]);
 
@@ -277,10 +291,23 @@ function App() {
   };
 
   const handleWalletTopup = (currency: 'thb' | 'jpy', amount: number) => {
+    const newRecord = { id: 'tp_' + Date.now(), date: new Date().toISOString(), amount, currency };
     setUserState(prev => ({
       ...prev,
-      wallet: { ...(prev.wallet || { thb: 0, jpy: 0 }), [currency]: (prev.wallet?.[currency] || 0) + amount }
+      topups: [...(prev.topups || []), newRecord]
     }));
+  };
+
+  const handleDeleteTopup = (id: string) => {
+    if (confirm('ยกเลิกรายการเติมเงินนี้?')) {
+      setUserState(prev => ({ ...prev, topups: (prev.topups || []).filter(t => t.id !== id) }));
+    }
+  };
+
+  const handleDeleteExchange = (id: string) => {
+    if (confirm('ยกเลิกรายการแลกเงินนี้?')) {
+      setUserState(prev => ({ ...prev, exchanges: (prev.exchanges || []).filter(e => e.id !== id) }));
+    }
   };
 
   const handlePlanUpdate = async (updated: TripBlueprint) => {
@@ -328,96 +355,262 @@ function App() {
   const renderContent = () => {
     if (!tripPlan) return null;
 
-    if (currentTab === 'summary') {
-      return (
-        <div className="card-enter">
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 px-2">Fixed Expenses</h3>
-          {tripPlan.summary.map(item => {
-            const defaultCur: 'thb' | 'jpy' = item.jpy > 0 && item.thb === 0 ? 'jpy' : 'thb';
-            const cur = userState.planned[item.id]?.currency || defaultCur;
-            return (
-              <TripCard key={item.id} {...item} isTimeline={false}
-                paid={userState.planned[item.id]?.paid || false}
-                actual={userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : (cur === 'jpy' ? item.jpy : item.thb)}
-                currency={cur}
-                onTogglePaid={togglePaid} onPriceChange={handlePriceChange} />
-            );
-          })}
-        </div>
-      );
-    }
+    const history = [
+      ...(userState.topups || []).map(t => ({ ...t, kind: 'topup' as const })),
+      ...(userState.exchanges || []).map(e => ({ ...e, kind: 'exchange' as const }))
+    ].sort((a, b) => b.date.localeCompare(a.date));
 
-    const planMain = (tripPlan.planMains || []).find(pm => pm.id === currentTab);
-    if (!planMain) return null;
-
-    const dayStatus = getDayStatus(planMain.date);
-    const itemStatus = (time: string) => getItemStatus(dayStatus, time);
-
-    const scheduleItems = (planMain.schedules || []).map(i => ({ ...i, isExtra: false as const }));
-    const extraItems = (userState.extras || [])
-      .filter(e => e.planMainId === currentTab)
-      .map((e: any) => {
-        const amt = Number(e.amount ?? e.thb) || 0;
-        const cur: 'thb' | 'jpy' = e.currency || 'thb';
-        return { ...e, amount: amt, currency: cur, thb: cur === 'thb' ? amt : 0, jpy: cur === 'jpy' ? amt : 0, isExtra: true as const };
-      });
-    const combined = [...scheduleItems, ...extraItems].sort((a, b) => a.time.localeCompare(b.time));
+    const tripBg = tripPlan.planMains?.find(pm => pm.image)?.image || "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=2070&auto=format&fit=crop";
 
     return (
       <>
-        <div className="relative" ref={timelineRef}>
-          <div className="timeline-line">
-            {nowPosition !== null && <div className="timeline-progress" style={{ height: nowPosition }}></div>}
+      {/* ── Summary Tab ── */}
+      <div className={currentTab !== 'summary' ? 'hidden' : 'relative'}>
+          {/* Real Cinematic Body Backdrop Fade */}
+          <div className="absolute -top-24 -left-10 -right-10 h-[500px] z-0 overflow-hidden pointer-events-none">
+            <img src={tripBg} alt="" className="w-full h-full object-cover blur-[2px] scale-110 opacity-70 saturate-[1.8] brightness-90" />
+            {/* Deep Multi-Layer Top Fade */}
+            <div className="absolute inset-0 bg-linear-to-b from-surface via-surface/90 to-transparent h-40"></div>
+            <div className="absolute inset-0 bg-linear-to-b from-surface via-transparent to-transparent opacity-100"></div>
+            
+            <div className="absolute inset-0 bg-linear-to-b from-transparent via-surface/80 to-surface"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-surface/20 via-transparent to-transparent"></div>
           </div>
 
-          {nowPosition !== null && (
-            <div className="absolute left-0 right-0 z-20 pointer-events-none transition-all duration-1000 ease-linear -translate-y-1/2"
-              style={{ top: nowPosition }}>
-              <div className="absolute left-0 w-11 flex items-center justify-end pr-3">
-                <span className="text-[11px] font-black text-japan-red">{currentTime.slice(0, 5)}</span>
+          <div className="relative z-10 space-y-8 pb-10">
+            {/* Minimalist Floating Header */}
+            <div className="pt-10 pb-6 text-center card-enter">
+              <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/40 backdrop-blur-md border border-white/40 shadow-xl mb-6">
+                <span className="material-symbols-outlined text-secondary text-2xl">account_balance_wallet</span>
               </div>
-              <div className="absolute left-[47px]">
-                <div className="w-3 h-3 rounded-full bg-japan-red ring-4 ring-japan-red/20 dot-pulse"></div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-black text-japan-red uppercase tracking-[0.6em] ml-1">Consolidated</span>
+                <h1 className="text-4xl font-headline font-black text-secondary uppercase leading-none tracking-tighter">
+                  Trip <span className="opacity-40">Ledger</span>
+                </h1>
+                <div className="flex items-center justify-center gap-2 mt-4 opacity-50">
+                  <div className="h-px w-4 bg-secondary"></div>
+                  <p className="text-[9px] font-bold text-secondary uppercase tracking-[0.2em]">
+                    {tripPlan.trip.name} • {tripPlan.trip.destination}
+                  </p>
+                  <div className="h-px w-4 bg-secondary"></div>
+                </div>
               </div>
-              <div className="absolute left-[62px] top-1/2 -translate-y-1/2 whitespace-nowrap bg-japan-red text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg shadow-japan-red/20">
-                NOW
-              </div>
-            </div>
-          )}
 
-          {combined.map(item => {
-            const defaultCur: 'thb' | 'jpy' = item.isExtra
-              ? ((item as any).currency || 'thb')
-              : (item.jpy > 0 && item.thb === 0 ? 'jpy' : 'thb');
-            const cur = item.isExtra ? defaultCur : (userState.planned[item.id]?.currency || defaultCur);
-            return (
-              <TripCard key={item.id} {...item} isTimeline={true}
-                status={itemStatus(item.time)}
-                paid={item.isExtra ? true : (userState.planned[item.id]?.paid || false)}
-                actual={item.isExtra ? (item.thb || item.jpy) : (userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : (cur === 'jpy' ? item.jpy : item.thb))}
-                currency={cur}
-                onTogglePaid={togglePaid} onPriceChange={handlePriceChange}                onDelete={handleDeleteExtra} isExtra={item.isExtra} />
-            );
-          })}
+              {/* Wallet Quick Actions - Minimalist Glass Style */}
+              <div className="mt-8 flex items-center justify-center gap-3">
+                <button 
+                  onClick={() => setIsTopupModalOpen(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/40 shadow-xl text-secondary hover:bg-white/60 active:scale-95 transition-all text-xs font-black uppercase tracking-widest"
+                >
+                  <span className="material-symbols-outlined text-lg">add_circle</span>
+                  Top Up
+                </button>
+                <button 
+                  onClick={() => setIsBudgetPlanOpen(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-secondary/90 backdrop-blur-xl border border-secondary shadow-xl shadow-secondary/20 text-white hover:bg-secondary active:scale-95 transition-all text-xs font-black uppercase tracking-widest"
+                >
+                  <span className="material-symbols-outlined text-lg">currency_exchange</span>
+                  Exchange
+                </button>
+              </div>
+            </div>
 
-          {/* End of Day */}
-          <div className="relative pl-20 h-[38px] card-with-time" data-time="23:59">
-            <div className="absolute left-0 top-full -translate-y-1/2 w-11 flex items-center justify-end pr-3">
-              <span className={`text-[11px] font-black ${dayStatus === 'past' ? 'text-primary' : 'text-gray-300'}`}>00:00</span>
-            </div>
-            <div className="absolute left-[45px] top-full -translate-y-1/2 w-4 h-4 flex items-center justify-center z-10 bg-surface rounded-full">
-              {dayStatus === 'past'
-                ? <span className="material-symbols-outlined text-primary filled" style={{ fontSize: '18px' }}>check_circle</span>
-                : <div className="w-3 h-3 rounded-full bg-gray-200 border-2 border-surface"></div>}
-            </div>
-            <div className="absolute left-20 top-full -translate-y-1/2">
-              <div className={`py-2 px-4 rounded-2xl border border-dashed italic text-[10px] font-bold uppercase tracking-widest inline-block shadow-sm transition-all ${
-                dayStatus === 'past' ? 'bg-primary/5 border-primary text-primary' : 'bg-white/50 border-gray-100 text-gray-300'
-              }`}>End of Day</div>
+            <div className="card-enter">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 px-2">Fixed Expenses</h3>
+            {tripPlan.summary.map(item => {
+              const defaultCur: 'thb' | 'jpy' = item.jpy > 0 && item.thb === 0 ? 'jpy' : 'thb';
+              const cur = userState.planned[item.id]?.currency || defaultCur;
+              return (
+                <TripCard key={item.id} {...item} isTimeline={false} isMini={true}
+                  paid={userState.planned[item.id]?.paid || false}
+                  actual={userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : (cur === 'jpy' ? item.jpy : item.thb)}
+                  currency={cur}
+                  onTogglePaid={togglePaid} onPriceChange={handlePriceChange} />
+              );
+            })}
+          </div>
+
+          <div className="card-enter">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 px-2">Transaction History</h3>
+            <div className="space-y-2">
+              {history.length > 0 ? history.map(item => (
+                <div key={item.id} className="flex items-center justify-between p-4 rounded-3xl bg-white border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                      item.kind === 'topup' ? 'bg-primary/10 text-primary' : 'bg-japan-red/10 text-japan-red'
+                    }`}>
+                      <span className="material-symbols-outlined text-xl">
+                        {item.kind === 'topup' ? 'payments' : 'currency_exchange'}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-secondary uppercase tracking-tight truncate">
+                        {item.kind === 'topup' 
+                          ? (item.id.startsWith('legacy') ? 'Initial Balance' : 'Top-up') 
+                          : 'Currency Exchange'}
+                      </p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase">
+                        {new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      {item.kind === 'topup' ? (
+                        <p className="text-sm font-black text-secondary">
+                          <span className="text-[11px] font-black text-japan-red mr-1">
+                            {(item as any).currency === 'jpy' ? '¥' : '฿'}
+                          </span>
+                          {(item as any).amount.toLocaleString()}
+                        </p>
+                      ) : (
+                        <div className="flex flex-col items-end">
+                          <p className="text-xs font-black text-japan-red">
+                            <span className="text-[10px] mr-1">฿</span>
+                            {(item as any).thb.toLocaleString()}
+                          </p>
+                          <p className="text-xs font-black text-primary">
+                            <span className="text-[10px] mr-1">¥</span>
+                            {(item as any).jpy.toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <button 
+                      onClick={() => item.kind === 'topup' ? handleDeleteTopup(item.id) : handleDeleteExchange(item.id)}
+                      className="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:text-japan-red hover:bg-japan-red/5 transition-all flex items-center justify-center"
+                    >
+                      <span className="material-symbols-outlined text-base">delete</span>
+                    </button>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="p-8 text-center bg-gray-50/50 rounded-4xl border-2 border-dashed border-gray-100">
+                    <span className="material-symbols-outlined text-gray-300 text-4xl mb-2">history</span>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No history yet</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-        <div className="h-20" />
+
+      {/* ── Day Tabs ── */}
+      {sortedPlanMains.map(pm => {
+        const dayStatus = getDayStatus(pm.date);
+        const itemStatus = (time: string) => getItemStatus(dayStatus, time);
+        const scheduleItems = (pm.schedules || []).map(i => ({ ...i, isExtra: false as const }));
+        const extraItems = (userState.extras || [])
+          .filter(e => e.planMainId === pm.id)
+          .map((e: any) => {
+            const amt = Number(e.amount ?? e.thb) || 0;
+            const cur: 'thb' | 'jpy' = e.currency || 'thb';
+            return { ...e, amount: amt, currency: cur, thb: cur === 'thb' ? amt : 0, jpy: cur === 'jpy' ? amt : 0, isExtra: true as const };
+          });
+        const combined = [...scheduleItems, ...extraItems].sort((a, b) => a.time.localeCompare(b.time));
+        return (
+          <div key={pm.id} className={currentTab === pm.id ? 'relative' : 'hidden'}>
+            {/* Cinematic Body Backdrop for Daily View */}
+            <div className="absolute -top-24 -left-10 -right-10 h-[500px] z-0 overflow-hidden pointer-events-none">
+              {pm.image ? (
+                <>
+                  <img src={pm.image} alt="" className="w-full h-full object-cover blur-[2px] scale-110 opacity-70 saturate-[1.8] brightness-90 transition-transform duration-1000" />
+                  {/* Deep Multi-Layer Top Fade */}
+                  <div className="absolute inset-0 bg-linear-to-b from-surface via-surface/90 to-transparent h-40"></div>
+                  <div className="absolute inset-0 bg-linear-to-b from-surface via-transparent to-transparent opacity-100"></div>
+                  
+                  <div className="absolute inset-0 bg-linear-to-b from-transparent via-surface/80 to-surface"></div>
+                  <div className="absolute inset-0 bg-linear-to-t from-surface/20 via-transparent to-transparent"></div>
+                </>
+              ) : (
+                <div className="w-full h-full bg-linear-to-br from-japan-red/10 via-primary/5 to-surface"></div>
+              )}
+            </div>
+
+            {/* Floating Minimalist Header Over Ambient BG */}
+            <div className="relative z-10 pt-10 pb-8 card-enter">
+              <div className="flex items-end justify-between gap-4">
+                <div className="min-w-0 pr-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1 h-3 bg-japan-red rounded-full"></div>
+                    <p className="text-[10px] font-black text-secondary/40 uppercase tracking-[0.4em]">Day {String(sortedPlanMains.indexOf(pm) + 1).padStart(2, '0')}</p>
+                  </div>
+                  <h1 className="text-3xl font-headline font-black text-secondary uppercase leading-none tracking-tighter drop-shadow-sm truncate">
+                    {pm.title}
+                  </h1>
+                  {pm.desc && (
+                    <p className="text-secondary/60 text-[10px] font-medium mt-2 line-clamp-1 italic">
+                      {pm.desc}
+                    </p>
+                  )}
+                </div>
+                <div className="shrink-0">
+                  <span className="px-3 py-1.5 rounded-2xl bg-white/40 backdrop-blur-md border border-white/40 text-secondary text-[10px] font-black tracking-widest shadow-xl flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-xs">calendar_today</span>
+                    {pm.date}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative" ref={currentTab === pm.id ? timelineRef : null}>
+              <div className="timeline-line !-top-8">
+                {nowPosition !== null && <div className="timeline-progress" style={{ height: nowPosition }}></div>}
+              </div>
+
+              {nowPosition !== null && (
+                <div className="absolute left-0 right-0 z-20 pointer-events-none transition-all duration-1000 ease-linear -translate-y-1/2"
+                  style={{ top: nowPosition }}>
+                  <div className="absolute left-0 w-11 flex items-center justify-end pr-3">
+                    <span className="text-[11px] font-black text-japan-red">{currentTime.slice(0, 5)}</span>
+                  </div>
+                  <div className="absolute left-[47px]">
+                    <div className="w-3 h-3 rounded-full bg-japan-red ring-4 ring-japan-red/20 dot-pulse"></div>
+                  </div>
+                  <div className="absolute left-[62px] top-1/2 -translate-y-1/2 whitespace-nowrap bg-japan-red text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg shadow-japan-red/20">
+                    NOW
+                  </div>
+                </div>
+              )}
+
+              {combined.map(item => {
+                const defaultCur: 'thb' | 'jpy' = item.isExtra
+                  ? ((item as any).currency || 'thb')
+                  : (item.jpy > 0 && item.thb === 0 ? 'jpy' : 'thb');
+                const cur = item.isExtra ? defaultCur : (userState.planned[item.id]?.currency || defaultCur);
+                return (
+                  <TripCard key={item.id} {...item} isTimeline={true}
+                    status={itemStatus(item.time)}
+                    paid={item.isExtra ? true : (userState.planned[item.id]?.paid || false)}
+                    actual={item.isExtra ? (item.thb || item.jpy) : (userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : (cur === 'jpy' ? item.jpy : item.thb))}
+                    currency={cur}
+                    onTogglePaid={togglePaid} onPriceChange={handlePriceChange}
+                    onDelete={handleDeleteExtra} isExtra={item.isExtra} />
+                );
+              })}
+
+              {/* End of Day */}
+              <div className="relative pl-20 h-[38px] card-with-time" data-time="23:59">
+                <div className="absolute left-0 top-full -translate-y-1/2 w-11 flex items-center justify-end pr-3">
+                  <span className={`text-[11px] font-black ${dayStatus === 'past' ? 'text-primary' : 'text-gray-300'}`}>00:00</span>
+                </div>
+                <div className="absolute left-[45px] top-full -translate-y-1/2 w-4 h-4 flex items-center justify-center z-10 bg-surface rounded-full">
+                  {dayStatus === 'past'
+                    ? <span className="material-symbols-outlined text-primary filled" style={{ fontSize: '18px' }}>check_circle</span>
+                    : <div className="w-3 h-3 rounded-full bg-gray-200 border-2 border-surface"></div>}
+                </div>
+                <div className="absolute left-20 top-full -translate-y-1/2">
+                  <div className={`py-2 px-4 rounded-2xl border border-dashed italic text-[10px] font-bold uppercase tracking-widest inline-block shadow-sm transition-all ${
+                    dayStatus === 'past' ? 'bg-primary/5 border-primary text-primary' : 'bg-white/50 border-gray-100 text-gray-300'
+                  }`}>End of Day</div>
+                </div>
+              </div>
+            </div>
+            <div className="h-20" />
+          </div>
+        );
+      })}
       </>
     );
   };
@@ -458,8 +651,7 @@ function App() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface selection:bg-japan-red/10" style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}>
       <Header onReset={handleReset} currentTime={currentTime} user={user}
-        onLogout={() => signOut(auth)}
-        isAdmin={isAdmin} onManage={() => setShowManage(true)} />
+        onLogout={() => signOut(auth)} />
 
       <main className="pt-16 max-w-2xl mx-auto px-5" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
         {showManage && isAdmin && tripPlan ? (
@@ -468,26 +660,30 @@ function App() {
           </div>
         ) : (
           <>
-            <Dashboard
-              activeCurrency={activeWallet}
-              onSwitchCurrency={setActiveWallet}
-              stats={stats}
-              tripName={tripPlan!.trip.name}
-              planMains={sortedPlanMains}
-              activeTab={currentTab}
-              onTabChange={setCurrentTab}
-              walletStats={walletStats}
-              onOpenTopup={() => setIsTopupModalOpen(true)}
-              onOpenExchange={() => setIsBudgetPlanOpen(true)}
-              onOpenManage={() => setShowManage(!showManage)}
-              exchangeRate={lastExchangeRate}
-            />
-            <div id="content" className="min-h-[400px] mt-2">{renderContent()}</div>
+            <div className="relative z-20">
+              <Dashboard
+                tripName={tripPlan!.trip.name}
+                planMains={sortedPlanMains}
+                activeTab={currentTab}
+                onTabChange={setCurrentTab}
+              />
+            </div>
+            <div id="content" className="min-h-[400px] relative z-10">{renderContent()}</div>
           </>
         )}
       </main>
 
-      <BottomNav onOpenExtra={() => setIsExtraModalOpen(true)} onOpenOverview={() => setShowOverview(true)} onOpenManage={() => setShowManage(!showManage)} isManageActive={showManage} />
+      <BottomNav 
+        onOpenExtra={() => setIsExtraModalOpen(true)} 
+        onOpenOverview={() => setShowOverview(true)} 
+        onOpenManage={() => setShowManage(!showManage)} 
+        isManageActive={showManage} 
+        activeCurrency={activeWallet}
+        onSwitchCurrency={setActiveWallet}
+        walletStats={{thbRemaining: walletStats.thbRemaining, jpyRemaining: walletStats.jpyRemaining}}
+        planStats={{thbPlan: stats.thb.plan, jpyPlan: stats.jpy.plan}}
+        onOpenTopup={() => setIsTopupModalOpen(true)}
+      />
       <ExtraModal
         isOpen={isExtraModalOpen}
         onClose={() => setIsExtraModalOpen(false)}

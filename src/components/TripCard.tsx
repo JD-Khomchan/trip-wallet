@@ -21,12 +21,13 @@ interface TripCardProps {
   onPriceChange: (id: string, price: number) => void;
   onDelete?: (id: string) => void;
   isExtra?: boolean;
+  isMini?: boolean;
 }
 
 const TripCard: React.FC<TripCardProps> = ({
   id, time, title, jpy, thb, type, desc, image, mapUrl, guide,
   isTimeline, status = 'future', paid, actual, currency,
-  onTogglePaid, onPriceChange, onDelete, isExtra
+  onTogglePaid, onPriceChange, onDelete, isExtra, isMini
 }) => {
   const [expanded, setExpanded] = useState(false);
   const hasExtra = image || mapUrl || guide;
@@ -122,82 +123,64 @@ const TripCard: React.FC<TripCardProps> = ({
   const shadowColor = status === 'current' ? 'shadow-japan-red/5' : status === 'past' ? 'shadow-primary/5' : 'shadow-sm';
 
   return (
-    <div className={`relative card-enter ${isTimeline ? 'pl-20 mb-8 card-with-time' : 'mb-3'}`}
+    <div className={`relative ${isTimeline ? 'pl-20 mb-8 card-with-time' : isMini ? 'mb-2' : 'mb-3'}`}
       data-time={isTimeline ? time : undefined}>
       {renderTimelineHeader()}
 
-      <div className={`bg-white p-4 rounded-3xl border ${borderColor} ${shadowColor} transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-secondary/5 hover:border-primary/20`}>
+      {/* Hero Currency Badge - Unified across Dashboard & Wallet */}
+      <div className={`absolute -top-2 -right-1 flex items-center justify-center rounded-full bg-japan-red text-white font-black shadow-md z-20 border-[3px] border-white animate-in zoom-in duration-500 hover:scale-110 transition-transform ${
+        isMini ? 'w-6 h-6 text-[11px]' : 'w-7 h-7 text-[13px]'
+      }`}>
+        {isJpy ? '¥' : '฿'}
+      </div>
+
+      <div className={`bg-white shadow-sm border ${borderColor} ${shadowColor} transition-all duration-300 ${isMini ? 'p-4 rounded-3xl' : 'p-4 rounded-3xl hover:scale-[1.01] hover:shadow-lg hover:shadow-secondary/5'}`}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             {/* Icon Box / Paid Toggle */}
             <button
               onClick={() => onTogglePaid(id, defaultPrice, currency)}
-              className={`relative w-11 h-11 rounded-2xl flex-none flex items-center justify-center transition-all duration-500 shadow-sm overflow-hidden active:scale-90 ${
-                paid ? 'bg-primary text-white' :
-                status === 'past' ? 'bg-primary/20 text-primary opacity-80' :
-                status === 'current' ? 'bg-japan-red text-white shadow-lg shadow-japan-red/20' :
-                'bg-gray-50 text-gray-400 border border-gray-100'
+              className={`w-10 h-10 rounded-2xl flex-none flex items-center justify-center transition-all duration-300 shrink-0 relative ${
+                paid ? 'bg-primary text-white' : 'bg-gray-50 text-gray-400 group-hover:text-secondary'
               }`}>
               <span className={`material-symbols-outlined text-xl ${paid ? 'opacity-40' : ''}`}>{getIcon(isExtra ? 'other' : type)}</span>
               {paid && (
-                <div className="absolute inset-0 flex items-center justify-center bg-primary/20 backdrop-blur-[1px]">
-                  <span className="material-symbols-outlined text-white filled text-2xl">check</span>
+                <div className="absolute inset-0 flex items-center justify-center bg-primary/20 backdrop-blur-[1px] rounded-2xl">
+                  <span className="material-symbols-outlined text-white filled text-xl">check</span>
                 </div>
               )}
             </button>
 
             {/* Info Block */}
-            <div className="flex-1 min-w-0 group cursor-pointer" onClick={() => hasExtra && setExpanded(!expanded)}>
-              <div className="flex items-center gap-2">
-                <p className="font-headline font-extrabold text-secondary text-[15px] truncate leading-tight">{title}</p>
-                {hasExtra && (
-                  <span className={`material-symbols-outlined text-lg transition-transform duration-300 ${expanded ? 'rotate-180 text-secondary' : 'text-gray-200'}`}>
-                    expand_more
-                  </span>
-                )}
-                {isExtra && (
-                  <span className="text-[7px] font-black bg-japan-red/10 text-japan-red px-1.5 py-0.5 rounded uppercase tracking-widest border border-japan-red/20">Extra</span>
-                )}
-              </div>
-              <div className="flex items-center gap-3 mt-0.5">
-                {jpy > 0 && (
-                  <div className="flex items-center gap-0.5">
-                    <span className="text-[10px] font-black text-gray-400">¥</span>
-                    <span className="text-[10px] font-bold text-gray-400 leading-none">{jpy.toLocaleString()}</span>
-                  </div>
-                )}
-                <p className="text-[10px] font-bold text-gray-300 truncate tracking-tight">{desc || 'No description'}</p>
-              </div>
+            <div className="min-w-0 flex-1 flex flex-col justify-center cursor-pointer" onClick={() => hasExtra && !isMini && setExpanded(!expanded)}>
+              <p className={`font-black text-secondary ${isMini ? 'text-xs uppercase tracking-tight' : 'font-headline text-[16px]'} truncate leading-tight`}>{title}</p>
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1.5 leading-none">
+                {isMini ? 'Fixed Expense' : (desc || type)}
+              </p>
             </div>
           </div>
 
-          {/* Action Area */}
-          <div className="flex items-center gap-3 shrink-0 pl-2 border-l border-gray-50">
-            <div className="flex flex-col items-end pr-1">
-              <div className="flex items-center justify-end">
-                <span className="text-[12px] font-black mr-1 text-japan-red">
-                  {isJpy ? '¥' : '฿'}
-                </span>
-                <input
-                  type="number"
-                  value={actual !== undefined ? actual : defaultPrice}
-                  onChange={(e) => onPriceChange(id, parseFloat(e.target.value) || 0)}
-                  className="w-16 bg-transparent border-0 p-0 text-right font-headline font-black text-[17px] focus:ring-0 text-japan-red"
-                />
-              </div>
+          {/* Action Area - Pure Numbers with enhanced size */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center font-headline font-black text-japan-red">
+              <input
+                type="number"
+                value={actual !== undefined ? actual : defaultPrice}
+                onChange={(e) => onPriceChange(id, parseFloat(e.target.value) || 0)}
+                className={`bg-transparent border-0 p-0 text-right focus:ring-0 font-black ${
+                  isMini ? 'w-18 text-[18px]' : 'w-24 text-[22px]'
+                }`}
+              />
             </div>
-
-
-
             {isExtra && (
-              <button onClick={() => onDelete?.(id)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-japan-red/5 text-japan-red/40 hover:bg-japan-red/10 hover:text-japan-red transition-colors">
-                <span className="material-symbols-outlined text-lg">delete</span>
+              <button onClick={() => onDelete?.(id)} className="w-8 h-8 rounded-xl bg-gray-50 text-gray-400 hover:text-japan-red hover:bg-japan-red/5 transition-all flex items-center justify-center">
+                <span className="material-symbols-outlined text-base">delete</span>
               </button>
             )}
           </div>
         </div>
 
-        {renderExpandedContent()}
+        {!isMini && renderExpandedContent()}
       </div>
     </div>
   );

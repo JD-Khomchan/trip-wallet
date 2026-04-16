@@ -10,7 +10,7 @@ interface HeaderProps {
   onManage: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onReset, currentTime, user, onLogout, isAdmin, onManage }) => {
+const Header: React.FC<Omit<HeaderProps, 'isAdmin' | 'onManage'>> = ({ onReset, currentTime, user, onLogout }) => {
   return (
     <header className="fixed top-0 w-full z-[100] glass-header border-b border-gray-100"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -24,11 +24,6 @@ const Header: React.FC<HeaderProps> = ({ onReset, currentTime, user, onLogout, i
         <div className="flex items-center gap-1">
           <span className="text-[10px] font-black bg-gray-100 px-2 py-1 rounded text-gray-500">{currentTime}</span>
           <img src={user.photoURL || ''} className="w-7 h-7 rounded-full mx-1" title={user.displayName || ''} />
-          {isAdmin && (
-            <button onClick={onManage} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-400" title="Manage Plan">
-              <span className="material-symbols-outlined text-xl">edit_note</span>
-            </button>
-          )}
           <button onClick={onReset} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors text-gray-400">
             <span className="material-symbols-outlined text-xl">restart_alt</span>
           </button>

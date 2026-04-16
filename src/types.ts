@@ -79,11 +79,19 @@ export interface ExchangeRecord {
   rate: number;
 }
 
+export interface TopupRecord {
+  id: string;
+  date: string;
+  amount: number;
+  currency: 'thb' | 'jpy';
+}
+
 export interface UserState {
   planned: Record<string, PlannedItem>;
   extras: ExtraItem[];
   wallet: WalletState;
   exchanges: ExchangeRecord[];
+  topups?: TopupRecord[];
 }
 
 export type TabId = 'summary' | string;
