@@ -196,7 +196,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
                         </h2>
                         {pm.desc && <p className="text-[10px] text-japan-red/70 font-bold">{pm.desc}</p>}
                       </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-2">
                         <button onClick={() => openEditPlanMain(pm)} className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:text-secondary hover:bg-gray-100 transition-all">
                           <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
                         </button>
@@ -219,7 +219,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
                               {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
                             </span>
                           )}
-                          <button onClick={() => handleDeleteItem(item.id, pm.id)} className="opacity-0 group-hover/item:opacity-100 text-gray-300 hover:text-red-300 transition-opacity ml-1">
+                          <button onClick={() => handleDeleteItem(item.id, pm.id)} className="text-gray-300 hover:text-red-300 transition-colors ml-1">
                             <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
                           </button>
                         </div>
