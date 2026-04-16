@@ -139,7 +139,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
               <span className={`text-[13px] font-black shrink-0 ${item.jpy > 0 && item.thb === 0 ? 'text-blue-500' : 'text-japan-red'}`}>
                 {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
               </span>
-              <button onClick={() => handleDeleteItem(item.id, 'summary')} className="opacity-0 group-hover:opacity-100 transition-opacity text-red-300 hover:text-red-500 shrink-0">
+              <button onClick={() => handleDeleteItem(item.id, 'summary')} className="text-red-300 active:text-red-500 shrink-0">
                 <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
               </button>
             </div>
@@ -190,7 +190,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
                           {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
                         </span>
                       )}
-                      <button onClick={() => handleDeleteItem(item.id, pm.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-red-300 hover:text-red-500 shrink-0">
+                      <button onClick={() => handleDeleteItem(item.id, pm.id)} className="text-red-300 active:text-red-500 shrink-0">
                         <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
                       </button>
                     </div>
