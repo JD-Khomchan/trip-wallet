@@ -7,24 +7,35 @@ import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import TripCard from './components/TripCard';
 import ExtraModal from './components/ExtraModal';
+import ExchangeModal from './components/ExchangeModal';
+import TopupModal from './components/TopupModal';
 import BottomNav from './components/BottomNav';
 import ManagePlan from './components/ManagePlan';
+import BudgetPlanModal from './components/BudgetPlanModal';
 import { TRIP_BLUEPRINT } from './constants';
 import { getDayStatus, getItemStatus, getAutoTab } from './utils';
-import type { UserState, TabId, ExtraItem, TripBlueprint } from './types';
+import type { UserState, TabId, ExtraItem, TripBlueprint, ExchangeRecord } from './types';
 import './index.css';
+
+const EMPTY_STATE: UserState = { planned: {}, extras: [], wallet: { thb: 0, jpy: 0 }, exchanges: [] };
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [userState, setUserState] = useState<UserState>({ planned: {}, extras: [] });
+  const [userState, setUserState] = useState<UserState>(EMPTY_STATE);
   const [tripPlan, setTripPlan] = useState<TripBlueprint | null>(null);
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const [showManage, setShowManage] = useState(false);
   const [currentTab, setCurrentTab] = useState<TabId>('summary');
   const [isExtraModalOpen, setIsExtraModalOpen] = useState(false);
+  const [activeWallet, setActiveWallet] = useState<'thb' | 'jpy'>('jpy');
+  const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
+  const [isBudgetPlanOpen, setIsBudgetPlanOpen] = useState(false);
+  const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+  const [nowPosition, setNowPosition] = useState<number | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const isAdmin = adminEmails.includes(user?.email || '');
@@ -35,7 +46,7 @@ function App() {
       setUser(firebaseUser);
       if (firebaseUser) {
         const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userSnap.exists()) setUserState(userSnap.data() as UserState);
+        if (userSnap.exists()) setUserState({ ...EMPTY_STATE, ...(userSnap.data() as UserState) });
 
         const adminSnap = await getDoc(doc(db, 'config', 'admins'));
         if (adminSnap.exists()) setAdminEmails(adminSnap.data().emails || []);
@@ -43,7 +54,6 @@ function App() {
         const planSnap = await getDoc(doc(db, 'trips', 'main'));
         if (planSnap.exists()) {
           const raw = planSnap.data() as any;
-          // Migrate old structure (days[]) → new structure (planMains[])
           if (!raw.planMains && raw.days) {
             const migrated: TripBlueprint = {
               trip: raw.trip || TRIP_BLUEPRINT.trip,
@@ -74,7 +84,7 @@ function App() {
       } else {
         setDataLoaded(false);
         setTripPlan(null);
-        setUserState({ planned: {}, extras: [] });
+        setUserState(EMPTY_STATE);
       }
       setAuthLoading(false);
     });
@@ -94,40 +104,181 @@ function App() {
   useEffect(() => {
     const update = () => {
       const now = new Date();
-      setCurrentTime(now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0'));
+      setCurrentTime(
+        now.getHours().toString().padStart(2, '0') + ':' +
+        now.getMinutes().toString().padStart(2, '0') + ':' +
+        now.getSeconds().toString().padStart(2, '0')
+      );
     };
     update();
-    const interval = setInterval(update, 60000);
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Dashboard Calculations
-  const { planTotal, actualTotal } = useMemo(() => {
-    if (!tripPlan) return { planTotal: 0, actualTotal: 0 };
-    let p = 0, a = 0;
+  // Calculate Now Pointer Position
+  useEffect(() => {
+    if (!timelineRef.current || currentTab === 'summary') {
+      setNowPosition(null);
+      return;
+    }
 
+    const calc = () => {
+      const container = timelineRef.current;
+      if (!container || !tripPlan) return;
+
+      const planMain = (tripPlan.planMains || []).find(pm => pm.id === currentTab);
+      if (!planMain || getDayStatus(planMain.date) !== 'today') {
+        setNowPosition(null);
+        return;
+      }
+
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+
+      const cards = Array.from(container.querySelectorAll('.card-with-time'));
+      const timePoints = [
+        { minutes: 0, y: 0 },
+        ...cards.map(c => {
+          const timeStr = c.getAttribute('data-time') || '00:00';
+          const [h, m] = timeStr.split(':').map(Number);
+          const dot = c.querySelector('.rounded-full, .material-symbols-outlined') as HTMLElement;
+          return { minutes: h * 60 + m, y: (c as HTMLElement).offsetTop + (dot ? dot.offsetTop : 38) };
+        })
+      ].sort((a, b) => a.minutes - b.minutes);
+
+      let pos = null;
+      if (nowMinutes <= timePoints[0].minutes) {
+        pos = timePoints[0].y;
+      } else if (nowMinutes >= timePoints[timePoints.length - 1].minutes) {
+        pos = timePoints[timePoints.length - 1].y;
+      } else {
+        for (let i = 0; i < timePoints.length - 1; i++) {
+          const start = timePoints[i], end = timePoints[i + 1];
+          if (nowMinutes >= start.minutes && nowMinutes <= end.minutes) {
+            const ratio = (nowMinutes - start.minutes) / (end.minutes - start.minutes);
+            pos = start.y + (end.y - start.y) * ratio;
+            break;
+          }
+        }
+      }
+      setNowPosition(pos);
+    };
+
+    calc();
+    const interval = setInterval(calc, 1000);
+    window.addEventListener('resize', calc);
+    return () => { clearInterval(interval); window.removeEventListener('resize', calc); };
+  }, [currentTime, currentTab, tripPlan]);
+
+  // Last exchange rate (1 THB = ? JPY)
+  const lastExchangeRate = useMemo(() => {
+    const exchanges = userState.exchanges || [];
+    if (exchanges.length === 0) return null;
+    return exchanges[exchanges.length - 1].rate;
+  }, [userState.exchanges]);
+
+  // Sort planMains by date (dd/mm)
+  const sortedPlanMains = useMemo(() => {
+    if (!tripPlan) return [];
+    return [...tripPlan.planMains].sort((a, b) => {
+      const [da, ma] = (a.date || '0/0').split('/').map(Number);
+      const [db, mb] = (b.date || '0/0').split('/').map(Number);
+      return ma !== mb ? ma - mb : da - db;
+    });
+  }, [tripPlan]);
+
+  // Dashboard Stats แยกเป็น 2 สกุลเงิน
+  const stats = useMemo(() => {
+    if (!tripPlan) return { 
+      thb: { plan: 0, actual: 0 }, 
+      jpy: { plan: 0, actual: 0 } 
+    };
+    
+    let thbPlan = 0, thbActual = 0;
+    let jpyPlan = 0, jpyActual = 0;
+
+    // คำนวณจาก Summary Items
     (tripPlan.summary || []).forEach(item => {
-      p += item.thb;
-      if (userState.planned[item.id]?.paid) a += userState.planned[item.id].actual;
+      thbPlan += item.thb || 0;
+      jpyPlan += item.jpy || 0;
+      
+      const p = userState.planned[item.id];
+      if (p?.paid) {
+        if (p.currency === 'jpy') jpyActual += p.actual;
+        else thbActual += p.actual;
+      }
     });
 
+    // คำนวณจาก Plan Mains & Schedules
     (tripPlan.planMains || []).forEach(pm => {
       (pm.schedules || []).forEach(item => {
-        p += item.thb;
-        if (userState.planned[item.id]?.paid) a += userState.planned[item.id].actual;
+        thbPlan += item.thb || 0;
+        jpyPlan += item.jpy || 0;
+        
+        const p = userState.planned[item.id];
+        if (p?.paid) {
+          if (p.currency === 'jpy') jpyActual += p.actual;
+          else thbActual += p.actual;
+        }
       });
     });
 
-    (userState.extras || []).forEach(ex => { a += ex.thb; });
+    // คำนวณจาก Extra Items
+    (userState.extras || []).forEach((ex: any) => { 
+      const amt = Number(ex.amount ?? ex.thb) || 0;
+      const cur = ex.currency || 'thb';
+      if (cur === 'jpy') jpyActual += amt;
+      else thbActual += amt;
+    });
 
-    return { planTotal: p, actualTotal: a };
+    return { 
+      thb: { plan: thbPlan, actual: thbActual }, 
+      jpy: { plan: jpyPlan, actual: jpyActual } 
+    };
   }, [userState, tripPlan]);
+
+  // Wallet Stats พร้อมรองรับ Exchange
+  const walletStats = useMemo(() => {
+    const wallet = userState.wallet || { thb: 0, jpy: 0 };
+    const exchanges = userState.exchanges || [];
+
+    const totalExchangedThb = exchanges.reduce((s, e) => s + e.thb, 0);
+    const totalExchangedJpy = exchanges.reduce((s, e) => s + e.jpy, 0);
+
+    let spentThb = 0;
+    let spentJpy = 0;
+    
+    Object.values(userState.planned).forEach(p => {
+      if (!p.paid) return;
+      if (p.currency === 'jpy') spentJpy += p.actual;
+      else spentThb += p.actual;
+    });
+
+    (userState.extras || []).forEach((ex: any) => { 
+      const amt = Number(ex.amount ?? ex.thb) || 0;
+      const cur = ex.currency || 'thb';
+      if (cur === 'jpy') spentJpy += amt;
+      else spentThb += amt;
+    });
+
+    return {
+      thbRemaining: wallet.thb - totalExchangedThb - spentThb,
+      jpyRemaining: wallet.jpy + totalExchangedJpy - spentJpy,
+      thbDeposited: wallet.thb,
+      jpyDeposited: wallet.jpy,
+    };
+  }, [userState]);
 
   // Handlers
   const handleReset = () => {
-    if (confirm('ต้องการรีเซ็ตข้อมูลทั้งหมด?')) {
-      setUserState({ planned: {}, extras: [] });
-    }
+    if (confirm('ต้องการรีเซ็ตข้อมูลทั้งหมด?')) setUserState(EMPTY_STATE);
+  };
+
+  const handleWalletTopup = (currency: 'thb' | 'jpy', amount: number) => {
+    setUserState(prev => ({
+      ...prev,
+      wallet: { ...(prev.wallet || { thb: 0, jpy: 0 }), [currency]: (prev.wallet?.[currency] || 0) + amount }
+    }));
   };
 
   const handlePlanUpdate = async (updated: TripBlueprint) => {
@@ -140,24 +291,36 @@ function App() {
     }
   };
 
-  const togglePaid = (id: string, initialPrice: number) => {
+  const handleExchange = (record: Omit<ExchangeRecord, 'id' | 'date'>) => {
+    const newRecord: ExchangeRecord = { ...record, id: 'ex_' + Date.now(), date: new Date().toISOString() };
+    setUserState(prev => ({ ...prev, exchanges: [...(prev.exchanges || []), newRecord] }));
+  };
+
+  const togglePaid = (id: string, initialPrice: number, currency: 'thb' | 'jpy' = 'thb') => {
     setUserState(prev => {
-      const current = prev.planned[id] || { paid: false, actual: initialPrice };
+      const current = prev.planned[id] || { paid: false, actual: initialPrice, currency };
       return { ...prev, planned: { ...prev.planned, [id]: { ...current, paid: !current.paid } } };
     });
+  };
+
+  const handleCurrencyChange = (id: string, currency: 'thb' | 'jpy') => {
+    setUserState(prev => ({
+      ...prev,
+      planned: { ...prev.planned, [id]: { ...(prev.planned[id] || { paid: false, actual: 0, currency }), currency } }
+    }));
   };
 
   const handlePriceChange = (id: string, price: number) => {
     setUserState(prev => ({
       ...prev,
-      planned: { ...prev.planned, [id]: { ...(prev.planned[id] || { paid: true }), actual: price } }
+      planned: { ...prev.planned, [id]: { ...(prev.planned[id] || { paid: true, currency: 'thb' }), actual: price } }
     }));
   };
 
   const handleAddExtra = (item: Omit<ExtraItem, 'id' | 'planMainId'>) => {
     const planMainId = currentTab === 'summary' ? tripPlan?.planMains[0]?.id : currentTab;
     const newExtra: ExtraItem = { ...item, id: 'ex_' + Date.now(), planMainId };
-    setUserState(prev => ({ ...prev, extras: [...prev.extras, newExtra] }));
+    setUserState(prev => ({ ...prev, extras: [...(prev.extras || []), newExtra] }));
   };
 
   const handleDeleteExtra = (id: string) => {
@@ -173,12 +336,17 @@ function App() {
       return (
         <div className="card-enter">
           <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 px-2">Fixed Expenses</h3>
-          {tripPlan.summary.map(item => (
-            <TripCard key={item.id} {...item} isTimeline={false}
-              paid={userState.planned[item.id]?.paid || false}
-              actual={userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : item.thb}
-              onTogglePaid={togglePaid} onPriceChange={handlePriceChange} />
-          ))}
+          {tripPlan.summary.map(item => {
+            const defaultCur: 'thb' | 'jpy' = item.jpy > 0 && item.thb === 0 ? 'jpy' : 'thb';
+            const cur = userState.planned[item.id]?.currency || defaultCur;
+            return (
+              <TripCard key={item.id} {...item} isTimeline={false}
+                paid={userState.planned[item.id]?.paid || false}
+                actual={userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : (cur === 'jpy' ? item.jpy : item.thb)}
+                currency={cur}
+                onTogglePaid={togglePaid} onPriceChange={handlePriceChange} onCurrencyChange={handleCurrencyChange} />
+            );
+          })}
         </div>
       );
     }
@@ -192,22 +360,70 @@ function App() {
     const scheduleItems = (planMain.schedules || []).map(i => ({ ...i, isExtra: false as const }));
     const extraItems = (userState.extras || [])
       .filter(e => e.planMainId === currentTab)
-      .map(e => ({ ...e, isExtra: true as const }));
+      .map((e: any) => {
+        const amt = Number(e.amount ?? e.thb) || 0;
+        const cur: 'thb' | 'jpy' = e.currency || 'thb';
+        return { ...e, amount: amt, currency: cur, thb: cur === 'thb' ? amt : 0, jpy: cur === 'jpy' ? amt : 0, isExtra: true as const };
+      });
     const combined = [...scheduleItems, ...extraItems].sort((a, b) => a.time.localeCompare(b.time));
-    const hasPast = dayStatus === 'past' || combined.some(i => itemStatus(i.time) === 'past');
 
     return (
-      <div className="relative">
-        <div className={`timeline-line ${hasPast ? 'line-past' : ''}`}></div>
-        {combined.map(item => (
-          <TripCard key={item.id} {...item} isTimeline={true}
-            status={itemStatus(item.time)}
-            paid={userState.planned[item.id]?.paid || false}
-            actual={userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : item.thb}
-            onTogglePaid={togglePaid} onPriceChange={handlePriceChange}
-            onDelete={handleDeleteExtra} isExtra={item.isExtra} />
-        ))}
-      </div>
+      <>
+        <div className="relative" ref={timelineRef}>
+          <div className="timeline-line">
+            {nowPosition !== null && <div className="timeline-progress" style={{ height: nowPosition }}></div>}
+          </div>
+
+          {nowPosition !== null && (
+            <div className="absolute left-0 right-0 z-20 pointer-events-none transition-all duration-1000 ease-linear -translate-y-1/2"
+              style={{ top: nowPosition }}>
+              <div className="absolute left-0 w-11 flex items-center justify-end pr-3">
+                <span className="text-[11px] font-black text-accent">{currentTime.slice(0, 5)}</span>
+              </div>
+              <div className="absolute left-[47px]">
+                <div className="w-3 h-3 rounded-full bg-accent ring-4 ring-accent/20 dot-pulse"></div>
+              </div>
+              <div className="absolute left-[62px] top-1/2 -translate-y-1/2 whitespace-nowrap bg-accent text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg shadow-accent/20">
+                NOW
+              </div>
+            </div>
+          )}
+
+          {combined.map(item => {
+            const defaultCur: 'thb' | 'jpy' = item.isExtra
+              ? ((item as any).currency || 'thb')
+              : (item.jpy > 0 && item.thb === 0 ? 'jpy' : 'thb');
+            const cur = item.isExtra ? defaultCur : (userState.planned[item.id]?.currency || defaultCur);
+            return (
+              <TripCard key={item.id} {...item} isTimeline={true}
+                status={itemStatus(item.time)}
+                paid={item.isExtra ? true : (userState.planned[item.id]?.paid || false)}
+                actual={item.isExtra ? (item.thb || item.jpy) : (userState.planned[item.id]?.actual !== undefined ? userState.planned[item.id].actual : (cur === 'jpy' ? item.jpy : item.thb))}
+                currency={cur}
+                onTogglePaid={togglePaid} onPriceChange={handlePriceChange} onCurrencyChange={handleCurrencyChange}
+                onDelete={handleDeleteExtra} isExtra={item.isExtra} />
+            );
+          })}
+
+          {/* End of Day */}
+          <div className="relative pl-20 h-[38px] card-with-time" data-time="23:59">
+            <div className="absolute left-0 top-full -translate-y-1/2 w-11 flex items-center justify-end pr-3">
+              <span className={`text-[11px] font-black ${dayStatus === 'past' ? 'text-primary' : 'text-gray-300'}`}>00:00</span>
+            </div>
+            <div className="absolute left-[45px] top-full -translate-y-1/2 w-4 h-4 flex items-center justify-center z-10 bg-surface rounded-full">
+              {dayStatus === 'past'
+                ? <span className="material-symbols-outlined text-primary filled" style={{ fontSize: '18px' }}>check_circle</span>
+                : <div className="w-3 h-3 rounded-full bg-gray-200 border-2 border-surface"></div>}
+            </div>
+            <div className="absolute left-20 top-full -translate-y-1/2">
+              <div className={`py-2 px-4 rounded-2xl border border-dashed italic text-[10px] font-bold uppercase tracking-widest inline-block shadow-sm transition-all ${
+                dayStatus === 'past' ? 'bg-primary/5 border-primary text-primary' : 'bg-white/50 border-gray-100 text-gray-300'
+              }`}>End of Day</div>
+            </div>
+          </div>
+        </div>
+        <div className="h-20" />
+      </>
     );
   };
 
@@ -243,25 +459,54 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen" style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}>
+    <div className="min-h-screen overflow-x-hidden bg-surface selection:bg-japan-red/10" style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}>
       <Header onReset={handleReset} currentTime={currentTime} user={user}
         onLogout={() => signOut(auth)}
         isAdmin={isAdmin} onManage={() => setShowManage(true)} />
 
-      <main className="pt-16 max-w-xl mx-auto px-4" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
-        <Dashboard 
-          planTotal={planTotal} 
-          actualTotal={actualTotal} 
-          tripName={tripPlan!.trip.name} 
-          planMains={tripPlan!.planMains}
+      <main className="pt-16 max-w-2xl mx-auto px-5" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
+        <Dashboard
+          activeCurrency={activeWallet}
+          onSwitchCurrency={setActiveWallet}
+          stats={stats}
+          tripName={tripPlan!.trip.name}
+          planMains={sortedPlanMains}
           activeTab={currentTab}
           onTabChange={setCurrentTab}
+          walletStats={walletStats}
+          onOpenTopup={() => setIsTopupModalOpen(true)}
+          onOpenExchange={() => setIsBudgetPlanOpen(true)}
+          exchangeRate={lastExchangeRate}
         />
         <div id="content" className="min-h-[400px] mt-2">{renderContent()}</div>
       </main>
 
       <BottomNav activeTab={currentTab} onTabChange={setCurrentTab} onOpenExtra={() => setIsExtraModalOpen(true)} />
-      <ExtraModal isOpen={isExtraModalOpen} onClose={() => setIsExtraModalOpen(false)} onSubmit={handleAddExtra} />
+      <ExtraModal
+        isOpen={isExtraModalOpen}
+        onClose={() => setIsExtraModalOpen(false)}
+        onSubmit={handleAddExtra}
+        activeWallet={activeWallet}
+      />
+      <BudgetPlanModal
+        isOpen={isBudgetPlanOpen}
+        onClose={() => setIsBudgetPlanOpen(false)}
+        thbPlan={stats.thb.plan}
+        jpyPlan={stats.jpy.plan}
+      />
+      <ExchangeModal
+        isOpen={isExchangeModalOpen}
+        onClose={() => setIsExchangeModalOpen(false)}
+        onConfirm={handleExchange}
+        walletThb={walletStats.thbRemaining}
+      />
+      <TopupModal
+        isOpen={isTopupModalOpen}
+        onClose={() => setIsTopupModalOpen(false)}
+        onConfirm={handleWalletTopup}
+        currency={activeWallet}
+        currentBalance={activeWallet === 'thb' ? walletStats.thbRemaining : walletStats.jpyRemaining}
+      />
     </div>
   );
 }
