@@ -88,7 +88,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
 
   const sortedMains = sortByDate(plan.planMains || []);
 
-  const inputCls = "w-full bg-gray-50 border border-transparent rounded-2xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-gray-200 transition-all outline-none min-h-[52px]";
+  const inputCls = "w-full bg-gray-50 border border-transparent rounded-2xl px-4 py-3 font-medium focus:bg-white focus:border-gray-200 transition-all outline-none min-h-[52px]" ;
   const labelCls = "block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5";
 
   return (
@@ -243,7 +243,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
     {showForm && (
         <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-secondary/80 backdrop-blur-md px-4"
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }} onClick={() => setShowForm(false)}>
-          <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[92vh] animate-slide-up" onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-5 border-b border-gray-100 flex justify-between items-center shrink-0">
               <div>
@@ -325,7 +325,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
       {showPlanMainForm && (
         <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-secondary/80 backdrop-blur-md px-4"
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }} onClick={() => setShowPlanMainForm(false)}>
-          <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl flex flex-col max-h-[92vh] animate-slide-up" onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-5 border-b border-gray-100 flex justify-between items-center shrink-0">
               <div>

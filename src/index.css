@@ -42,6 +42,10 @@ html, body {
   body {
     @apply bg-surface text-secondary font-body selection:bg-japan-red/10;
   }
+  /* Prevent iOS Safari auto-zoom on input focus */
+  input, select, textarea {
+    font-size: max(16px, 1em);
+  }
 }
 
 @layer components {
