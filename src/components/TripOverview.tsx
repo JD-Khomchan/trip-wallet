@@ -102,7 +102,7 @@ const TripOverview: React.FC<TripOverviewProps> = ({ plan, onBack }) => {
             {plan.summary.map(item => (
               <div key={item.id} className="flex items-baseline gap-3 py-1.5">
                 <span className="text-[12px] text-secondary flex-1 font-medium">{item.title}</span>
-                <span className={`text-[12px] font-black shrink-0 ${item.jpy > 0 && item.thb === 0 ? 'text-blue-500' : 'text-japan-red'}`}>
+                <span className="text-[12px] font-black shrink-0 text-japan-red">
                   {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
                 </span>
               </div>
@@ -150,7 +150,7 @@ const TripOverview: React.FC<TripOverviewProps> = ({ plan, onBack }) => {
                   )}
                   {/* Status dot */}
                   {isToday && (
-                    <div className="mt-2 w-1.5 h-1.5 rounded-full bg-accent dot-pulse" />
+                    <div className="mt-2 w-1.5 h-1.5 rounded-full bg-japan-red dot-pulse" />
                   )}
                   {isPast && (
                     <span className="material-symbols-outlined text-primary filled mt-1" style={{ fontSize: '14px' }}>
@@ -166,7 +166,7 @@ const TripOverview: React.FC<TripOverviewProps> = ({ plan, onBack }) => {
                       {/* Day title */}
                       <h2
                         className={`font-headline font-black uppercase tracking-wide leading-tight mb-1 ${
-                          isToday ? 'text-accent' : isPast ? 'text-gray-300' : 'text-secondary'
+                          isToday ? 'text-japan-red' : isPast ? 'text-gray-300' : 'text-secondary'
                         }`}
                         style={{ fontSize: 'clamp(1rem, 4vw, 1.4rem)', letterSpacing: '0.04em' }}
                       >
@@ -206,7 +206,7 @@ const TripOverview: React.FC<TripOverviewProps> = ({ plan, onBack }) => {
                           )}
                         </div>
                         {(item.thb > 0 || item.jpy > 0) && (
-                          <span className={`text-[11px] font-black shrink-0 ${item.jpy > 0 && item.thb === 0 ? 'text-blue-400' : 'text-japan-red'}`}>
+                          <span className="text-[11px] font-black shrink-0 text-japan-red">
                             {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
                           </span>
                         )}
@@ -236,7 +236,7 @@ const TripOverview: React.FC<TripOverviewProps> = ({ plan, onBack }) => {
               {totalJpy > 0 && (
                 <div>
                   <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Japanese Yen</p>
-                  <p className="font-headline font-black text-2xl text-blue-500">¥{totalJpy.toLocaleString()}</p>
+                  <p className="font-headline font-black text-2xl text-japan-red">¥{totalJpy.toLocaleString()}</p>
                 </div>
               )}
             </div>
