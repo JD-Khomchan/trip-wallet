@@ -11,6 +11,7 @@ import ExchangeModal from './components/ExchangeModal';
 import TopupModal from './components/TopupModal';
 import BottomNav from './components/BottomNav';
 import ManagePlan from './components/ManagePlan';
+import TripOverview from './components/TripOverview';
 import BudgetPlanModal from './components/BudgetPlanModal';
 import { TRIP_BLUEPRINT } from './constants';
 import { getDayStatus, getItemStatus, getAutoTab } from './utils';
@@ -27,6 +28,7 @@ function App() {
   const [tripPlan, setTripPlan] = useState<TripBlueprint | null>(null);
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
   const [showManage, setShowManage] = useState(false);
+  const [showOverview, setShowOverview] = useState(false);
   const [currentTab, setCurrentTab] = useState<TabId>('summary');
   const [isExtraModalOpen, setIsExtraModalOpen] = useState(false);
   const [activeWallet, setActiveWallet] = useState<'thb' | 'jpy'>('jpy');
@@ -451,6 +453,10 @@ function App() {
     return <ManagePlan plan={tripPlan} onBack={() => setShowManage(false)} onPlanUpdate={handlePlanUpdate} />;
   }
 
+  if (showOverview && tripPlan) {
+    return <TripOverview plan={tripPlan} onBack={() => setShowOverview(false)} />;
+  }
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface selection:bg-japan-red/10" style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}>
       <Header onReset={handleReset} currentTime={currentTime} user={user}
@@ -474,7 +480,7 @@ function App() {
         <div id="content" className="min-h-[400px] mt-2">{renderContent()}</div>
       </main>
 
-      <BottomNav activeTab={currentTab} onTabChange={setCurrentTab} onOpenExtra={() => setIsExtraModalOpen(true)} />
+      <BottomNav activeTab={currentTab} onTabChange={setCurrentTab} onOpenExtra={() => setIsExtraModalOpen(true)} onOpenOverview={() => setShowOverview(true)} />
       <ExtraModal
         isOpen={isExtraModalOpen}
         onClose={() => setIsExtraModalOpen(false)}
