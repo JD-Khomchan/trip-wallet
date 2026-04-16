@@ -241,7 +241,8 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
 
     {/* Item Form Modal */}
     {showForm && (
-        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/40 backdrop-blur-sm p-4 pb-0" onClick={() => setShowForm(false)}>
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-secondary/80 backdrop-blur-md px-4"
+        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }} onClick={() => setShowForm(false)}>
           <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-5 border-b border-gray-100 flex justify-between items-center shrink-0">
@@ -322,7 +323,8 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
 
       {/* PlanMain Form Modal */}
       {showPlanMainForm && (
-        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/40 backdrop-blur-sm p-4 pb-0" onClick={() => setShowPlanMainForm(false)}>
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-secondary/80 backdrop-blur-md px-4"
+        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }} onClick={() => setShowPlanMainForm(false)}>
           <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-5 border-b border-gray-100 flex justify-between items-center shrink-0">
