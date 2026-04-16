@@ -17,6 +17,14 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,svg}'],
         runtimeCaching: [
           {
+            urlPattern: /\.woff2$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'fonts-local',
+              expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+          {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
