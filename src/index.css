@@ -8,12 +8,12 @@ html, body {
 }
 
 @theme {
-  --color-primary: #059669;
-  --color-secondary: #535c85;
-  --color-surface: #f8fafc;
+  --color-primary: #8d7665;
+  --color-secondary: #4a3728;
+  --color-surface: #fcfaf8;
   --color-card: #ffffff;
-  --color-accent: #f97316;
-  --color-japan-red: #8f0020;
+  --color-accent: #fce4ec;
+  --color-japan-red: #e57399;
 
   --radius-card: 1.5rem;
   --radius-pill: 9999px;
@@ -54,11 +54,11 @@ html, body {
   }
 
   .sakura-gradient {
-    background: linear-gradient(135deg, #8f0020 0%, #bc002d 100%);
+    background: linear-gradient(135deg, #e57399 0%, #f06292 100%);
   }
 
   .glass-header {
-    background: rgba(248, 250, 252, 0.8);
+    background: rgba(252, 250, 248, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
@@ -84,11 +84,11 @@ html, body {
     top: 0;
     left: 0;
     width: 100%;
-    background: #059669;
+    background: var(--color-primary);
     transition: height 1s linear;
   }
   .line-past {
-    background: #059669 !important;
+    background: var(--color-primary) !important;
   }
 
   .dot-pulse {
@@ -101,7 +101,7 @@ html, body {
     height: 100%;
     top: 0;
     left: 0;
-    background: #f97316;
+    background: var(--color-japan-red);
     border-radius: 50%;
     animation: pulse 1.5s infinite;
     z-index: -1;

@@ -374,12 +374,12 @@ function App() {
             <div className="absolute left-0 right-0 z-20 pointer-events-none transition-all duration-1000 ease-linear -translate-y-1/2"
               style={{ top: nowPosition }}>
               <div className="absolute left-0 w-11 flex items-center justify-end pr-3">
-                <span className="text-[11px] font-black text-accent">{currentTime.slice(0, 5)}</span>
+                <span className="text-[11px] font-black text-japan-red">{currentTime.slice(0, 5)}</span>
               </div>
               <div className="absolute left-[47px]">
-                <div className="w-3 h-3 rounded-full bg-accent ring-4 ring-accent/20 dot-pulse"></div>
+                <div className="w-3 h-3 rounded-full bg-japan-red ring-4 ring-japan-red/20 dot-pulse"></div>
               </div>
-              <div className="absolute left-[62px] top-1/2 -translate-y-1/2 whitespace-nowrap bg-accent text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg shadow-accent/20">
+              <div className="absolute left-[62px] top-1/2 -translate-y-1/2 whitespace-nowrap bg-japan-red text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-lg shadow-japan-red/20">
                 NOW
               </div>
             </div>
