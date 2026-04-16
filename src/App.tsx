@@ -512,7 +512,10 @@ function App() {
                     <TripCard key={item.id}
                       id={item.id} time={item.time} title={item.title}
                       amount={item.amount} currency={cur}
-                      type={item.type} desc={item.desc} image={item.image} mapUrl={item.mapUrl} guide={item.guide}
+                      type={item.type} desc={item.desc}
+                      image={item.isExtra ? undefined : item.image}
+                      mapUrl={item.isExtra ? undefined : item.mapUrl}
+                      guide={item.isExtra ? undefined : item.guide}
                       isTimeline={true}
                       status={getItemStatus(dayStatus, item.time)}
                       paid={item.isExtra ? true : (userState.planned[item.id]?.paid ?? false)}

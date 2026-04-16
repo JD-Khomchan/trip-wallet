@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { getIcon } from '../constants';
-import { formatAmount } from '../utils';
 
 interface TripCardProps {
   id: string;
