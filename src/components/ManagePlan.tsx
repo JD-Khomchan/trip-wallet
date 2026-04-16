@@ -88,7 +88,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
 
   const sortedMains = sortByDate(plan.planMains || []);
 
-  const inputCls = "w-full bg-gray-50 border border-transparent rounded-2xl px-5 py-3.5 text-sm font-medium focus:bg-white focus:border-gray-200 transition-all outline-none";
+  const inputCls = "w-full bg-gray-50 border border-transparent rounded-2xl px-4 py-3 text-sm font-medium focus:bg-white focus:border-gray-200 transition-all outline-none min-h-[52px]";
   const labelCls = "block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5";
 
   return (
@@ -259,8 +259,8 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
             </div>
 
             {/* Modal Body */}
-            <div className="px-8 py-6 space-y-6 overflow-y-auto flex-1 overscroll-contain custom-scrollbar">
-              <div className={`grid gap-4 ${formContext !== 'summary' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <div className="px-6 py-6 space-y-6 overflow-y-auto flex-1 overscroll-contain custom-scrollbar">
+              <div className={`grid gap-3 ${formContext !== 'summary' ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 {formContext !== 'summary' && (
                   <div>
                     <label className={labelCls}>Time</label>
@@ -310,7 +310,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[2.5rem] shrink-0">
+            <div className="px-6 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[2.5rem] shrink-0">
               <div className="grid grid-cols-2 gap-4">
                 <button onClick={() => setShowForm(false)} className="py-4 rounded-2xl bg-white border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">Cancel</button>
                 <button onClick={handleSaveItem} className="py-4 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-md shadow-secondary/20">Save</button>
@@ -336,7 +336,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
             </div>
 
             {/* Modal Body */}
-            <div className="px-8 py-6 space-y-6 overflow-y-auto flex-1 overscroll-contain custom-scrollbar">
+            <div className="px-6 py-6 space-y-6 overflow-y-auto flex-1 overscroll-contain custom-scrollbar">
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
                   <label className={labelCls}>Title</label>
@@ -367,7 +367,7 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[2.5rem] shrink-0">
+            <div className="px-6 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[2.5rem] shrink-0">
               <div className="grid grid-cols-2 gap-4">
                 <button onClick={() => setShowPlanMainForm(false)} className="py-4 rounded-2xl bg-white border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">Cancel</button>
                 <button onClick={handleSavePlanMain} className="py-4 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-md shadow-secondary/20">Save</button>
