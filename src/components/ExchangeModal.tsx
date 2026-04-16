@@ -110,16 +110,16 @@ const ExchangeModal: React.FC<ExchangeModalProps> = ({ isOpen, onClose, onConfir
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 flex gap-3 px-6 py-4 pb-safe border-t border-gray-100">
-        <button onClick={onClose} className="flex-1 py-3 text-[10px] font-black uppercase text-gray-400 tracking-widest">
+      <div className="shrink-0 flex gap-3 px-6 py-5 border-t border-gray-100" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+        <button onClick={onClose} className="flex-1 py-4 rounded-2xl border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">
           Cancel
         </button>
         <button
           onClick={handleConfirm}
           disabled={!thbNum || !jpyNum || isOverBalance}
-          className="flex-1 py-3 bg-japan-red disabled:opacity-30 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-japan-red/20 tracking-widest"
+          className="flex-1 py-4 rounded-2xl sakura-gradient text-[11px] font-black uppercase tracking-widest text-white shadow-lg shadow-japan-red/20 active:scale-95 transition-all disabled:opacity-30 disabled:shadow-none"
         >
-          ยืนยันแลกเงิน
+          ยืนยัน
         </button>
       </div>
     </ModalSheet>

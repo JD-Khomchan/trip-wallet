@@ -109,16 +109,16 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose, onConfirm, cur
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 flex flex-col gap-3 px-8 py-5 pb-safe border-t border-gray-100">
+      <div className="shrink-0 flex gap-3 px-6 py-5 border-t border-gray-100" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+        <button onClick={onClose} className="flex-1 py-4 rounded-2xl border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
         <button
           onClick={handleConfirm}
           disabled={!amount || parseFloat(amount) <= 0}
-          className="w-full py-5 rounded-3xl text-[13px] font-black uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none bg-japan-red shadow-japan-red/30"
+          className="flex-1 py-4 rounded-2xl sakura-gradient text-[11px] font-black uppercase tracking-widest text-white shadow-lg shadow-japan-red/20 active:scale-95 transition-all disabled:opacity-30 disabled:shadow-none"
         >
-          Confirm Deposit
-        </button>
-        <button onClick={onClose} className="w-full py-3 text-[11px] font-black uppercase text-gray-400 tracking-widest hover:text-secondary transition-colors text-center">
-          Cancel & Return
+          Confirm
         </button>
       </div>
     </ModalSheet>

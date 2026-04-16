@@ -92,11 +92,8 @@ const BudgetPlanModal: React.FC<BudgetPlanModalProps> = ({ isOpen, onClose, thbP
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 px-6 py-4 pb-safe border-t border-gray-100">
-        <button
-          onClick={onClose}
-          className="w-full py-3 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
-        >
+      <div className="shrink-0 px-6 py-5 border-t border-gray-100" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
+        <button onClick={onClose} className="w-full py-4 rounded-2xl border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">
           ปิด
         </button>
       </div>
