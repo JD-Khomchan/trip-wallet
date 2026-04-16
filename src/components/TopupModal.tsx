@@ -22,8 +22,7 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose, onConfirm, cur
   if (!isOpen) return null;
 
   const isJpy = currency === 'jpy';
-  const themeColor = isJpy ? 'blue' : 'red';
-  const themeHex = isJpy ? '#3b82f6' : '#c82232'; // japan-red
+  const themeHex = '#e57399'; // Vibrant Sakura Pink
 
   const handleConfirm = () => {
     const val = parseFloat(amount);
@@ -52,17 +51,17 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose, onConfirm, cur
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div 
-        className="relative w-full sm:max-w-md bg-white sm:rounded-[3rem] rounded-t-[3rem] overflow-hidden shadow-2xl animate-slide-up pb-safe"
+        className="relative w-full sm:max-w-md bg-white sm:rounded-[3rem] rounded-t-[3rem] overflow-hidden shadow-2xl animate-slide-up flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Section - Improved Padding/Layout */}
-        <div className={`relative pt-10 pb-8 px-8 overflow-hidden bg-${themeColor}-50/50 text-secondary border-b border-${themeColor}-100/30`}>
+        <div className="shrink-0 relative pt-10 pb-8 px-8 overflow-hidden bg-japan-red/5 text-secondary border-b border-japan-red/10">
           <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-current opacity-[0.03] blur-3xl" style={{ color: themeHex }}></div>
           
           <div className="flex items-start justify-between relative z-10">
             <div className="flex-1">
               <h3 className="text-2xl font-headline font-black tracking-tight leading-tight">เติมเงินเข้าวอลเล็ต</h3>
-              <p className={`text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 opacity-80 ${isJpy ? 'text-blue-500' : 'text-japan-red'}`}>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 opacity-80 text-japan-red">
                 Add Funds to {isJpy ? '¥ JPY' : '฿ THB'} Wallet
               </p>
               
@@ -74,14 +73,14 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose, onConfirm, cur
               </div>
             </div>
             
-            <div className={`shrink-0 w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-2xl transition-all hover:rotate-6 hover:scale-105 ${isJpy ? 'bg-blue-500 shadow-blue-500/40' : 'bg-japan-red shadow-japan-red/40'}`}>
+            <div className="shrink-0 w-16 h-16 rounded-3xl flex items-center justify-center text-white shadow-2xl transition-all hover:rotate-6 hover:scale-105 bg-japan-red shadow-japan-red/40">
               <span className="material-symbols-outlined text-4xl">add_card</span>
             </div>
           </div>
         </div>
 
         {/* Input Section */}
-        <div className="p-8 pb-10 space-y-8">
+        <div className="flex-1 overflow-y-auto p-8 space-y-8">
           <div className="space-y-4">
             <div className="flex justify-between items-end px-1">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Amount to Deposit</label>
@@ -94,9 +93,9 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose, onConfirm, cur
               </button>
             </div>
             
-            <div className={`group flex items-center justify-center gap-4 bg-gray-50 rounded-3xl px-6 py-6 transition-all duration-300 border-2 ${isJpy ? 'focus-within:border-blue-500 focus-within:bg-white' : 'focus-within:border-japan-red focus-within:bg-white'} border-transparent shadow-inner`}>
+            <div className="group flex items-center justify-center gap-4 bg-gray-50 rounded-3xl px-6 py-6 transition-all duration-300 border-2 focus-within:border-japan-red focus-within:bg-white border-transparent shadow-inner">
               <div className="flex items-center w-full max-w-[280px]">
-                <span className={`text-3xl font-headline font-black ${isJpy ? 'text-blue-500' : 'text-japan-red'} mr-3`}>
+                <span className="text-3xl font-headline font-black text-japan-red mr-3">
                   {isJpy ? '¥' : '฿'}
                 </span>
                 <input
@@ -125,11 +124,7 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose, onConfirm, cur
                 <button
                   key={val}
                   onClick={() => handleQuickAdd(val)}
-                  className={`py-4 rounded-2xl border-2 text-[11px] font-black transition-all active:scale-95 ${
-                    isJpy 
-                    ? 'border-blue-50 text-blue-500 bg-blue-50/30 hover:bg-blue-500 hover:text-white hover:border-blue-500' 
-                    : 'border-red-50 text-japan-red bg-red-50/30 hover:bg-japan-red hover:text-white hover:border-japan-red'
-                  }`}
+                  className="py-4 rounded-2xl border-2 text-[11px] font-black transition-all active:scale-95 border-japan-red/10 text-japan-red bg-japan-red/5 hover:bg-japan-red hover:text-white hover:border-japan-red"
                 >
                   +{val.toLocaleString()}
                 </button>
@@ -137,24 +132,22 @@ const TopupModal: React.FC<TopupModalProps> = ({ isOpen, onClose, onConfirm, cur
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-3 pt-4">
-            <button
-              onClick={handleConfirm}
-              disabled={!amount || parseFloat(amount) <= 0}
-              className={`w-full py-5 rounded-3xl text-[13px] font-black uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed ${
-                isJpy ? 'bg-blue-500 shadow-blue-500/30 hover:bg-blue-600' : 'bg-japan-red shadow-japan-red/30 hover:bg-red-700'
-              }`}
-            >
-              Confirm Deposit
-            </button>
-            <button 
-              onClick={onClose} 
-              className="w-full py-4 text-[11px] font-black uppercase text-gray-400 tracking-widest hover:text-secondary transition-colors text-center"
-            >
-              Cancel & Return
-            </button>
-          </div>
+        </div>
+        {/* Footer */}
+        <div className="shrink-0 flex flex-col gap-3 px-8 py-5 pb-safe border-t border-gray-100">
+          <button
+            onClick={handleConfirm}
+            disabled={!amount || parseFloat(amount) <= 0}
+            className="w-full py-5 rounded-3xl text-[13px] font-black uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed bg-japan-red shadow-japan-red/30 hover:bg-red-700"
+          >
+            Confirm Deposit
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-4 text-[11px] font-black uppercase text-gray-400 tracking-widest hover:text-secondary transition-colors text-center"
+          >
+            Cancel & Return
+          </button>
         </div>
       </div>
     </div>

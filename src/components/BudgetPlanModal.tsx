@@ -39,17 +39,17 @@ const BudgetPlanModal: React.FC<BudgetPlanModalProps> = ({ isOpen, onClose, thbP
       className="fixed inset-0 z-200 flex items-end justify-center bg-black/30 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="relative w-full max-w-sm mx-4 bg-white rounded-t-4xl overflow-hidden shadow-2xl card-enter pb-safe">
+      <div className="relative w-full max-w-sm mx-4 bg-white rounded-t-4xl overflow-hidden shadow-2xl card-enter flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="shrink-0 p-6 bg-japan-red/5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-blue-500 flex items-center justify-center text-white shadow-lg">
+              <div className="w-10 h-10 rounded-2xl bg-japan-red flex items-center justify-center text-white shadow-lg">
                 <span className="material-symbols-outlined text-xl">calculate</span>
               </div>
               <div>
                 <h3 className="text-lg font-headline font-extrabold text-secondary">ประมาณการรวม</h3>
-                <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Budget Plan Summary</p>
+                <p className="text-[10px] font-black text-japan-red uppercase tracking-widest">Budget Plan Summary</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 text-gray-400 hover:bg-black/5 rounded-full transition-colors">
@@ -58,25 +58,25 @@ const BudgetPlanModal: React.FC<BudgetPlanModalProps> = ({ isOpen, onClose, thbP
           </div>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {/* ส่วนประกอบ */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between py-3 px-4 bg-red-50 rounded-2xl">
+            <div className="flex items-center justify-between py-3 px-4 bg-japan-red/5 rounded-2xl">
               <div className="flex items-center gap-2">
                 <span className="text-lg font-black text-japan-red">฿</span>
-                <span className="text-[12px] font-bold text-gray-500">รายการสกุลบาท</span>
+                <span className="text-[12px] font-bold text-gray-500">THB Items</span>
               </div>
               <span className="text-[16px] font-headline font-black text-japan-red">
                 ฿{thbPlan.toLocaleString()}
               </span>
             </div>
 
-            <div className="flex items-center justify-between py-3 px-4 bg-blue-50 rounded-2xl">
+            <div className="flex items-center justify-between py-3 px-4 bg-japan-red/10 rounded-2xl">
               <div className="flex items-center gap-2">
-                <span className="text-lg font-black text-blue-500">¥</span>
-                <span className="text-[12px] font-bold text-gray-500">รายการสกุลเยน</span>
+                <span className="text-lg font-black text-japan-red">¥</span>
+                <span className="text-[12px] font-bold text-gray-500">JPY Items</span>
               </div>
-              <span className="text-[16px] font-headline font-black text-blue-500">
+              <span className="text-[16px] font-headline font-black text-japan-red">
                 ¥{jpyPlan.toLocaleString()}
               </span>
             </div>
@@ -120,6 +120,9 @@ const BudgetPlanModal: React.FC<BudgetPlanModalProps> = ({ isOpen, onClose, thbP
             </>
           )}
 
+        </div>
+        {/* Footer */}
+        <div className="shrink-0 px-6 py-4 pb-safe border-t border-gray-100">
           <button
             onClick={onClose}
             className="w-full py-3 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
