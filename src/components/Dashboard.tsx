@@ -26,6 +26,7 @@ interface DashboardProps {
   };
   onOpenTopup: () => void;
   onOpenExchange: () => void;
+  onOpenManage?: () => void;
   exchangeRate: number | null;
 }
 
@@ -40,6 +41,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   walletStats,
   onOpenTopup,
   onOpenExchange,
+  onOpenManage,
   exchangeRate,
 }) => {
   const calcPercent = (actual: number, plan: number) => 
@@ -148,19 +150,15 @@ const Dashboard: React.FC<DashboardProps> = ({
         <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3 px-1">Itinerary Schedule</h3>
         <div className="flex gap-3 overflow-x-auto no-scrollbar pt-3 pb-4">
           <button
-            onClick={() => onTabChange('summary')}
-            className={`flex flex-col overflow-hidden rounded-2xl min-w-[76px] h-[92px] transition-all border shrink-0 group ${
-              activeTab === 'summary'
-                ? 'bg-secondary text-white border-secondary shadow-lg shadow-secondary/20 scale-105'
-                : 'bg-white text-gray-400 border-gray-100 hover:border-gray-200'
-            }`}
+            onClick={() => onOpenManage?.()}
+            className="flex flex-col overflow-hidden rounded-2xl min-w-[76px] h-[92px] transition-all border shrink-0 bg-white text-gray-400 border-gray-100 hover:border-japan-red shadow-sm group active:scale-95"
           >
-            <div className={`h-5 w-full flex items-center justify-center ${activeTab === 'summary' ? 'bg-white/10' : 'bg-gray-50 group-hover:bg-gray-100'}`}>
-              <span className="text-[8px] font-black uppercase tracking-tighter">Budget</span>
+            <div className="h-5 w-full flex items-center justify-center bg-gray-50 group-hover:bg-japan-red text-gray-400 group-hover:text-white transition-colors">
+              <span className="text-[8px] font-black uppercase tracking-tighter">Edit</span>
             </div>
-            <div className="flex-1 flex flex-col items-center justify-center px-1">
-              <span className="material-symbols-outlined text-xl mb-0.5">account_balance_wallet</span>
-              <span className="text-[10px] font-black uppercase leading-none">Wallet</span>
+            <div className="flex-1 flex flex-col items-center justify-center px-1 text-gray-400 group-hover:text-japan-red transition-colors">
+              <span className="material-symbols-outlined text-xl mb-0.5">edit_calendar</span>
+              <span className="text-[10px] font-black uppercase leading-none">Plan</span>
             </div>
           </button>
 

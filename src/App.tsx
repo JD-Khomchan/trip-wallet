@@ -449,9 +449,7 @@ function App() {
     );
   }
 
-  if (showManage && isAdmin && tripPlan) {
-    return <ManagePlan plan={tripPlan} onBack={() => setShowManage(false)} onPlanUpdate={handlePlanUpdate} />;
-  }
+
 
   if (showOverview && tripPlan) {
     return <TripOverview plan={tripPlan} onBack={() => setShowOverview(false)} />;
@@ -464,23 +462,32 @@ function App() {
         isAdmin={isAdmin} onManage={() => setShowManage(true)} />
 
       <main className="pt-16 max-w-2xl mx-auto px-5" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
-        <Dashboard
-          activeCurrency={activeWallet}
-          onSwitchCurrency={setActiveWallet}
-          stats={stats}
-          tripName={tripPlan!.trip.name}
-          planMains={sortedPlanMains}
-          activeTab={currentTab}
-          onTabChange={setCurrentTab}
-          walletStats={walletStats}
-          onOpenTopup={() => setIsTopupModalOpen(true)}
-          onOpenExchange={() => setIsBudgetPlanOpen(true)}
-          exchangeRate={lastExchangeRate}
-        />
-        <div id="content" className="min-h-[400px] mt-2">{renderContent()}</div>
+        {showManage && isAdmin && tripPlan ? (
+          <div className="-mx-5">
+            <ManagePlan plan={tripPlan} onPlanUpdate={handlePlanUpdate} />
+          </div>
+        ) : (
+          <>
+            <Dashboard
+              activeCurrency={activeWallet}
+              onSwitchCurrency={setActiveWallet}
+              stats={stats}
+              tripName={tripPlan!.trip.name}
+              planMains={sortedPlanMains}
+              activeTab={currentTab}
+              onTabChange={setCurrentTab}
+              walletStats={walletStats}
+              onOpenTopup={() => setIsTopupModalOpen(true)}
+              onOpenExchange={() => setIsBudgetPlanOpen(true)}
+              onOpenManage={() => setShowManage(!showManage)}
+              exchangeRate={lastExchangeRate}
+            />
+            <div id="content" className="min-h-[400px] mt-2">{renderContent()}</div>
+          </>
+        )}
       </main>
 
-      <BottomNav activeTab={currentTab} onTabChange={setCurrentTab} onOpenExtra={() => setIsExtraModalOpen(true)} onOpenOverview={() => setShowOverview(true)} />
+      <BottomNav onOpenExtra={() => setIsExtraModalOpen(true)} onOpenOverview={() => setShowOverview(true)} onOpenManage={() => setShowManage(!showManage)} isManageActive={showManage} />
       <ExtraModal
         isOpen={isExtraModalOpen}
         onClose={() => setIsExtraModalOpen(false)}

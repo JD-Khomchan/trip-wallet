@@ -4,26 +4,26 @@ import { getIcon, TRIP_BLUEPRINT } from '../constants';
 
 interface ManagePlanProps {
   plan: TripBlueprint;
-  onBack: () => void;
   onPlanUpdate: (plan: TripBlueprint) => void;
 }
 
 const TYPES = ['transport', 'flight', 'hotel', 'food', 'car', 'activity', 'other'];
 
 const TYPE_COLOR: Record<string, string> = {
-  flight: 'text-japan-red', transport: 'text-blue-500', activity: 'text-violet-500',
-  hotel: 'text-primary', food: 'text-accent', car: 'text-gray-500', other: 'text-gray-400',
+  flight: 'text-japan-red', transport: 'text-primary', activity: 'text-accent',
+  hotel: 'text-secondary', food: 'text-japan-red', car: 'text-gray-500', other: 'text-gray-400',
 };
 
 const emptyItemForm = { title: '', amount: 0, currency: 'thb' as 'thb' | 'jpy', type: 'transport', desc: '', time: '09:00', image: '', mapUrl: '', guide: '' };
 const emptyPlanMainForm = { title: '', date: '', type: 'activity', desc: '', image: '' };
 
-const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) => {
+const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onPlanUpdate }) => {
   const [showForm, setShowForm] = useState(false);
   const [formContext, setFormContext] = useState<'summary' | string>('summary');
   const [editing, setEditing] = useState<(SummaryItem | ScheduleItem) | null>(null);
   const [form, setForm] = useState(emptyItemForm);
   const [isNew, setIsNew] = useState(false);
+  const [subTab, setSubTab] = useState<'fixed' | 'itinerary'>('itinerary');
 
   const [showPlanMainForm, setShowPlanMainForm] = useState(false);
   const [planMainForm, setPlanMainForm] = useState(emptyPlanMainForm);
@@ -92,133 +92,159 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
   const labelCls = "block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5";
 
   return (
-    <div className="min-h-screen bg-white">
+    <>
+      <div className="card-enter bg-gray-50/50 px-0 py-6 rounded-[2.5rem] mb-12">
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur border-b border-gray-100"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <header className="w-full bg-white/50 backdrop-blur-sm border-b border-gray-100 rounded-3xl mb-6">
         <div className="max-w-lg mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-secondary transition-colors">
-              <span className="material-symbols-outlined text-xl">arrow_back</span>
-            </button>
             <div>
               <h1 className="font-headline font-black text-[15px] text-secondary tracking-tight leading-none">Manage Plan</h1>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{plan.planMains?.length || 0} days · {plan.summary?.length || 0} fixed</p>
             </div>
           </div>
-          <button
-            onClick={() => { if (confirm('Reset ข้อมูลทั้งหมด?')) onPlanUpdate(TRIP_BLUEPRINT); }}
-            className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-secondary transition-colors px-3 py-2 rounded-xl hover:bg-gray-50">
-            Reset
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => subTab === 'itinerary' ? openAddPlanMain() : openAddItem('summary')}
+              className="flex items-center gap-1.5 px-4 py-2 bg-secondary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-sm shadow-secondary/20">
+              <span className="material-symbols-outlined text-sm">add</span>
+              {subTab === 'itinerary' ? 'Add Day' : 'Add Fixed'}
+            </button>
+            <button
+              onClick={() => { if (confirm('Reset ข้อมูลทั้งหมด?')) onPlanUpdate(TRIP_BLUEPRINT); }}
+              className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-secondary transition-colors px-2 py-2 rounded-xl">
+              Reset
+            </button>
+          </div>
+        </div>
+        
+        {/* Sub-tab Switcher */}
+        <div className="px-6 pb-4">
+          <div className="flex bg-gray-100/50 p-1.5 rounded-2xl gap-1">
+            <button
+              onClick={() => setSubTab('itinerary')}
+              className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                subTab === 'itinerary' ? 'bg-white shadow-sm text-secondary' : 'text-gray-400'
+              }`}
+            >
+              Itinerary Plan
+            </button>
+            <button
+              onClick={() => setSubTab('fixed')}
+              className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                subTab === 'fixed' ? 'bg-white shadow-sm text-japan-red' : 'text-gray-400'
+              }`}
+            >
+              Fixed Expenses
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-6 pb-32"
-        style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top))' }}>
-
-        {/* Fixed Expenses */}
-        <div className="mb-8 pt-2">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-300">Fixed Expenses</p>
-            <button onClick={() => openAddItem('summary')}
-              className="text-[10px] font-black text-secondary uppercase tracking-widest flex items-center gap-1 hover:opacity-70 transition-opacity">
-              <span className="material-symbols-outlined text-sm">add</span> Add
-            </button>
-          </div>
-
-          {(plan.summary || []).length === 0 ? (
-            <p className="text-[11px] text-gray-300 italic py-3">ยังไม่มีรายการ</p>
-          ) : (plan.summary || []).map(item => (
-            <div key={item.id} className="flex items-baseline gap-3 py-2.5 border-b border-gray-50 group">
-              <span className={`material-symbols-outlined shrink-0 text-sm ${TYPE_COLOR[item.type] || 'text-gray-300'}`} style={{ fontSize: '14px' }}>{getIcon(item.type)}</span>
-              <button onClick={() => openEditItem(item, 'summary')} className="flex-1 text-left min-w-0">
-                <span className="text-[13px] text-secondary font-medium">{item.title}</span>
-                {item.desc && <span className="text-[11px] text-gray-400 italic ml-2">{item.desc}</span>}
-              </button>
-              <span className={`text-[13px] font-black shrink-0 ${item.jpy > 0 && item.thb === 0 ? 'text-blue-500' : 'text-japan-red'}`}>
-                {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
-              </span>
-              <button onClick={() => handleDeleteItem(item.id, 'summary')} className="text-red-300 active:text-red-500 shrink-0">
-                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
-              </button>
+      <div className="pb-32 px-1">
+        {subTab === 'fixed' ? (
+          <div className="bg-white rounded-[2rem] px-4 py-6 shadow-sm border border-gray-100 mb-8 mx-1">
+            <div className="flex items-center justify-between mb-6 px-1">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Fixed Expenses</p>
+                <p className="text-[9px] text-gray-300 mt-0.5 font-medium">แชร์ค่าใช้จ่ายก้อนใหญ่</p>
+              </div>
             </div>
-          ))}
-          <div className="mt-4 h-px bg-gray-100" />
-        </div>
 
-        {/* Days */}
-        {sortedMains.map((pm, idx) => (
-          <div key={pm.id} className="mb-2">
-            <div className="flex gap-5 py-4">
-              {/* Left col */}
-              <div className="shrink-0 w-16 pt-1">
-                <div className="flex items-baseline gap-1 mb-1.5">
-                  <span className="text-[10px] font-black tracking-[0.15em] text-gray-400 uppercase">DAY</span>
-                  <span className="text-[10px] font-black tracking-[0.15em] text-gray-400">{String(idx + 1).padStart(2, '0')}</span>
-                </div>
-                {pm.date && <p className="text-[11px] font-black text-gray-400 tracking-wide">{pm.date}</p>}
-                <div className="flex gap-1 mt-3">
-                  <button onClick={() => openEditPlanMain(pm)} className="text-gray-300 hover:text-secondary transition-colors">
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>edit</span>
+            <div className="space-y-1">
+              {(plan.summary || []).length === 0 ? (
+                <p className="text-[11px] text-gray-300 italic py-3 px-1">ยังไม่มีรายการ</p>
+              ) : (plan.summary || []).map(item => (
+                <div key={item.id} className="flex items-baseline gap-3 py-3 px-3 rounded-2xl hover:bg-gray-50 transition-colors group">
+                  <span className={`material-symbols-outlined shrink-0 text-sm ${TYPE_COLOR[item.type] || 'text-gray-300'}`} style={{ fontSize: '14px' }}>{getIcon(item.type)}</span>
+                  <button onClick={() => openEditItem(item, 'summary')} className="flex-1 text-left min-w-0">
+                    <span className="text-[13px] text-secondary font-bold">{item.title}</span>
+                    {item.desc && <span className="text-[11px] text-gray-400 italic ml-2">{item.desc}</span>}
                   </button>
-                  <button onClick={() => handleDeletePlanMain(pm.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+                  <span className="text-[13px] font-black shrink-0 text-japan-red font-mono">
+                    {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
+                  </span>
+                  <button onClick={() => handleDeleteItem(item.id, 'summary')} className="text-gray-200 hover:text-red-400 shrink-0 transition-colors ml-2">
                     <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
                   </button>
                 </div>
-              </div>
-
-              {/* Right col */}
-              <div className="flex-1 min-w-0">
-                <h2 className="font-headline font-black text-secondary uppercase tracking-wide leading-tight mb-1"
-                  style={{ fontSize: 'clamp(1rem, 4vw, 1.3rem)', letterSpacing: '0.04em' }}>
-                  {pm.title}
-                </h2>
-                {pm.desc && <p className="text-[11px] text-japan-red font-bold mb-3">{pm.desc}</p>}
-
-                {/* Schedules */}
-                <div className="space-y-2 mt-2">
-                  {(pm.schedules || []).map(item => (
-                    <div key={item.id} className="flex items-baseline gap-3 group">
-                      <span className="font-headline font-black text-[12px] text-secondary shrink-0 w-10 text-right">{item.time}</span>
-                      <button onClick={() => openEditItem(item, pm.id)} className="flex-1 text-left min-w-0">
-                        <span className="text-[13px] text-secondary">{item.title}</span>
-                        {item.desc && <span className="text-[11px] text-gray-400 italic ml-2">{item.desc}</span>}
-                      </button>
-                      {(item.thb > 0 || item.jpy > 0) && (
-                        <span className={`text-[12px] font-black shrink-0 ${item.jpy > 0 && item.thb === 0 ? 'text-blue-400' : 'text-japan-red'}`}>
-                          {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
-                        </span>
-                      )}
-                      <button onClick={() => handleDeleteItem(item.id, pm.id)} className="text-red-300 active:text-red-500 shrink-0">
-                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>delete</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <button onClick={() => openAddItem(pm.id)}
-                  className="mt-3 text-[10px] font-black text-gray-300 hover:text-secondary uppercase tracking-widest flex items-center gap-1 transition-colors">
-                  <span className="material-symbols-outlined text-sm">add</span> Add schedule
-                </button>
-              </div>
+              ))}
             </div>
-            <div className="h-px bg-gray-100 ml-20" />
           </div>
-        ))}
+        ) : (
+          <div className="space-y-4 mx-1">
+            {/* Days Section */}
+            {sortedMains.map((pm, idx) => (
+              <div key={pm.id} className="bg-white rounded-[2rem] px-3.5 py-6 shadow-sm border border-gray-100 group transition-all hover:shadow-md">
+                <div className="flex gap-4">
+                  {/* Left col */}
+                  <div className="shrink-0 w-11 text-center pt-1 border-r border-gray-50 pr-3">
+                    <div className="flex flex-col items-center">
+                      <span className="text-[8px] font-black tracking-widest text-gray-300 uppercase">DAY</span>
+                      <span className="text-lg font-headline font-black text-secondary leading-tight">{String(idx + 1).padStart(2, '0')}</span>
+                    </div>
+                    {pm.date && <p className="text-[9px] font-black text-japan-red/50 mt-1 whitespace-nowrap">{pm.date.split('/')[0]} {['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'][parseInt(pm.date.split('/')[1]) - 1]}</p>}
+                  </div>
 
-        {/* Add Day */}
-        <button onClick={openAddPlanMain}
-          className="w-full mt-6 py-5 border border-dashed border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 hover:text-secondary hover:border-gray-300 transition-colors flex items-center justify-center gap-2">
-          <span className="material-symbols-outlined text-sm">add</span> Add New Day
-        </button>
-      </main>
+                  {/* Right col */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="min-w-0">
+                        <h2 className="font-headline font-black text-secondary uppercase tracking-wide truncate pr-2"
+                          style={{ fontSize: '15px', letterSpacing: '0.04em' }}>
+                          {pm.title}
+                        </h2>
+                        {pm.desc && <p className="text-[10px] text-japan-red/70 font-bold">{pm.desc}</p>}
+                      </div>
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => openEditPlanMain(pm)} className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:text-secondary hover:bg-gray-100 transition-all">
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                        </button>
+                        <button onClick={() => handleDeletePlanMain(pm.id)} className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:text-red-400 hover:bg-red-50 transition-all">
+                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                        </button>
+                      </div>
+                    </div>
 
-      {/* Item Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowForm(false)}>
-          <div className="bg-white w-full max-w-lg rounded-t-3xl shadow-2xl overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="px-6 pt-8 pb-3 border-b border-gray-100 flex justify-between items-center">
+                    {/* Schedules */}
+                    <div className="space-y-1.5 pt-1 border-l-2 border-dashed border-gray-50 ml-0.5 pl-3">
+                      {(pm.schedules || []).map(item => (
+                        <div key={item.id} className="flex items-baseline gap-3 group/item">
+                          <span className="font-headline font-black text-[11px] text-gray-400 shrink-0 w-8">{item.time}</span>
+                          <button onClick={() => openEditItem(item, pm.id)} className="flex-1 text-left min-w-0">
+                            <span className="text-[12px] text-secondary font-medium group-hover/item:text-japan-red transition-colors">{item.title}</span>
+                          </button>
+                          {(item.thb > 0 || item.jpy > 0) && (
+                            <span className="text-[11px] font-black shrink-0 text-gray-400 font-mono">
+                              {item.jpy > 0 && item.thb === 0 ? `¥${item.jpy.toLocaleString()}` : `฿${item.thb.toLocaleString()}`}
+                            </span>
+                          )}
+                          <button onClick={() => handleDeleteItem(item.id, pm.id)} className="opacity-0 group-hover/item:opacity-100 text-gray-300 hover:text-red-300 transition-opacity ml-1">
+                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>close</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button onClick={() => openAddItem(pm.id)}
+                      className="mt-4 w-full py-2.5 rounded-xl border border-dashed border-gray-100 text-[9px] font-black text-gray-300 hover:text-secondary hover:border-gray-200 uppercase tracking-widest flex items-center justify-center gap-1 transition-all">
+                      <span className="material-symbols-outlined text-sm">add_circle</span> Add Schedule
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* Item Form Modal */}
+    {showForm && (
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/40 backdrop-blur-sm p-4 pb-0" onClick={() => setShowForm(false)}>
+          <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="px-8 pt-8 pb-5 border-b border-gray-100 flex justify-between items-center shrink-0">
               <div>
                 <h2 className="font-headline font-black text-xl text-secondary">
                   {isNew ? (formContext === 'summary' ? 'Add Fixed Item' : 'New Schedule') : 'Edit Item'}
@@ -232,7 +258,8 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
               </button>
             </div>
 
-            <div className="px-6 py-6 space-y-5">
+            {/* Modal Body */}
+            <div className="px-8 py-6 space-y-6 overflow-y-auto flex-1 overscroll-contain custom-scrollbar">
               <div className={`grid gap-4 ${formContext !== 'summary' ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 {formContext !== 'summary' && (
                   <div>
@@ -258,12 +285,12 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
                 <div className="flex gap-2">
                   <div className="flex bg-gray-50 rounded-2xl p-1 shrink-0 border border-gray-100">
                     <button type="button" onClick={() => setForm(f => ({ ...f, currency: 'thb' }))}
-                      className={`px-4 py-2 rounded-xl text-[11px] font-black transition-all ${form.currency === 'thb' ? 'bg-japan-red text-white' : 'text-gray-400'}`}>฿ THB</button>
+                      className={`px-5 py-2 rounded-xl text-[13px] font-black transition-all ${form.currency === 'thb' ? 'bg-japan-red text-white' : 'text-gray-400'}`}>฿</button>
                     <button type="button" onClick={() => setForm(f => ({ ...f, currency: 'jpy' }))}
-                      className={`px-4 py-2 rounded-xl text-[11px] font-black transition-all ${form.currency === 'jpy' ? 'bg-blue-500 text-white' : 'text-gray-400'}`}>¥ JPY</button>
+                      className={`px-5 py-2 rounded-xl text-[13px] font-black transition-all ${form.currency === 'jpy' ? 'bg-japan-red text-white' : 'text-gray-400'}`}>¥</button>
                   </div>
-                  <div className={`flex-1 flex items-center bg-gray-50 rounded-2xl px-4 border-2 border-transparent focus-within:bg-white transition-all ${form.currency === 'thb' ? 'focus-within:border-japan-red' : 'focus-within:border-blue-500'}`}>
-                    <span className={`font-black mr-2 ${form.currency === 'thb' ? 'text-japan-red' : 'text-blue-400'}`}>{form.currency === 'thb' ? '฿' : '¥'}</span>
+                  <div className="flex-1 flex items-center bg-gray-50 rounded-2xl px-4 border-2 border-transparent focus-within:bg-white transition-all focus-within:border-japan-red">
+                    <span className="font-black mr-2 text-japan-red">{form.currency === 'thb' ? '฿' : '¥'}</span>
                     <input type="number" value={form.amount || ''} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))}
                       className="w-full bg-transparent border-none focus:outline-none text-xl font-headline font-black text-secondary text-right py-3" />
                   </div>
@@ -280,10 +307,13 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
                 <input type="url" value={form.mapUrl} placeholder="Google Maps URL" onChange={e => setForm(f => ({ ...f, mapUrl: e.target.value }))} className={inputCls} />
                 <input type="url" value={form.image} placeholder="Image URL" onChange={e => setForm(f => ({ ...f, image: e.target.value }))} className={inputCls} />
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2 pb-6">
-                <button onClick={() => setShowForm(false)} className="py-3.5 rounded-2xl bg-gray-50 text-[11px] font-black uppercase tracking-widest text-gray-400">Cancel</button>
-                <button onClick={handleSaveItem} className="py-3.5 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest">Save</button>
+            {/* Modal Footer */}
+            <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[2.5rem] shrink-0">
+              <div className="grid grid-cols-2 gap-4">
+                <button onClick={() => setShowForm(false)} className="py-4 rounded-2xl bg-white border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">Cancel</button>
+                <button onClick={handleSaveItem} className="py-4 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-md shadow-secondary/20">Save</button>
               </div>
             </div>
           </div>
@@ -292,9 +322,10 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
 
       {/* PlanMain Form Modal */}
       {showPlanMainForm && (
-        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowPlanMainForm(false)}>
-          <div className="bg-white w-full max-w-lg rounded-t-3xl shadow-2xl overflow-y-auto max-h-[85vh]" onClick={e => e.stopPropagation()}>
-            <div className="px-6 pt-8 pb-3 border-b border-gray-100 flex justify-between items-center">
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/40 backdrop-blur-sm p-4 pb-0" onClick={() => setShowPlanMainForm(false)}>
+          <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[92vh]" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="px-8 pt-8 pb-5 border-b border-gray-100 flex justify-between items-center shrink-0">
               <div>
                 <h2 className="font-headline font-black text-xl text-secondary">{isNewPlanMain ? 'New Day' : 'Edit Day'}</h2>
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Day / Group Configuration</p>
@@ -304,7 +335,8 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
               </button>
             </div>
 
-            <div className="px-6 py-6 space-y-5">
+            {/* Modal Body */}
+            <div className="px-8 py-6 space-y-6 overflow-y-auto flex-1 overscroll-contain custom-scrollbar">
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
                   <label className={labelCls}>Title</label>
@@ -332,16 +364,19 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
                 <label className={labelCls}>Cover Image URL</label>
                 <input type="url" value={planMainForm.image} placeholder="https://..." onChange={e => setPlanMainForm(f => ({ ...f, image: e.target.value }))} className={inputCls} />
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2 pb-6">
-                <button onClick={() => setShowPlanMainForm(false)} className="py-3.5 rounded-2xl bg-gray-50 text-[11px] font-black uppercase tracking-widest text-gray-400">Cancel</button>
-                <button onClick={handleSavePlanMain} className="py-3.5 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest">Save</button>
+            {/* Modal Footer */}
+            <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 rounded-b-[2.5rem] shrink-0">
+              <div className="grid grid-cols-2 gap-4">
+                <button onClick={() => setShowPlanMainForm(false)} className="py-4 rounded-2xl bg-white border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors">Cancel</button>
+                <button onClick={handleSavePlanMain} className="py-4 rounded-2xl bg-secondary text-white text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-md shadow-secondary/20">Save</button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
