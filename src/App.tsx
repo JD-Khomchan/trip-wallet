@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from './firebase';
@@ -45,6 +45,7 @@ function App() {
   // ── Load data ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    getRedirectResult(auth).catch(() => {});
     return onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -568,7 +569,7 @@ function App() {
           <h1 className="font-headline font-extrabold text-2xl text-secondary">Trip Wallet</h1>
           <p className="text-gray-400 text-sm mt-1">{TRIP_BLUEPRINT.trip.name}</p>
         </div>
-        <button onClick={() => signInWithPopup(auth, googleProvider)}
+        <button onClick={() => signInWithRedirect(auth, googleProvider)}
           className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-6 py-3 shadow-sm hover:shadow-md transition-shadow font-semibold text-gray-700">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" />
           Sign in with Google
