@@ -128,22 +128,22 @@ const TripOverview: React.FC<TripOverviewProps> = ({ plan, onBack }) => {
                 {/* Left col — day label + date */}
                 <div className="shrink-0 w-16">
                   <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-[8px] font-black tracking-[0.18em] text-gray-400 uppercase">DAY</span>
-                    <span className="text-[8px] font-black tracking-[0.18em] text-gray-400">
+                    <span className="text-[11px] font-black tracking-[0.15em] text-gray-400 uppercase">DAY</span>
+                    <span className="text-[11px] font-black tracking-[0.15em] text-gray-400">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
                   </div>
                   {pm.date && (
-                    <div className="space-y-0">
+                    <div className="space-y-0.5">
                       {dayOfWeek && (
-                        <p className="text-[7px] font-black tracking-[0.2em] text-gray-300 uppercase leading-tight">
+                        <p className="text-[10px] font-black tracking-[0.15em] text-gray-400 uppercase leading-tight">
                           {dayOfWeek}
                         </p>
                       )}
-                      <p className="text-[7px] font-black tracking-[0.2em] text-gray-300 uppercase leading-tight">
+                      <p className="text-[10px] font-black tracking-[0.15em] text-gray-400 uppercase leading-tight">
                         DAY
                       </p>
-                      <p className="text-[9px] font-black tracking-[0.1em] text-gray-400 mt-1">
+                      <p className="text-[11px] font-black tracking-[0.08em] text-gray-500 mt-1">
                         {dayNum}/{monthName}
                       </p>
                     </div>
