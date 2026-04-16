@@ -14,7 +14,7 @@ const ModalSheet: React.FC<ModalSheetProps> = ({ isOpen, onClose, children }) =>
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="relative w-full sm:max-w-md bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl animate-slide-up flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-md mx-4 bg-white rounded-[2.5rem] overflow-hidden shadow-2xl animate-slide-up flex flex-col max-h-[90vh]"
         onClick={e => e.stopPropagation()}
       >
         {children}

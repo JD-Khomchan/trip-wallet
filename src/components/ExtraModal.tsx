@@ -61,7 +61,6 @@ const ExtraModal: React.FC<ExtraModalProps> = ({ isOpen, onClose, onSubmit, acti
               placeholder="0"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              autoFocus
               className="flex-1 bg-transparent border-0 focus:ring-0 font-headline font-black outline-none text-secondary text-center w-full"
               style={{ fontSize: '2.25rem' }}
             />
