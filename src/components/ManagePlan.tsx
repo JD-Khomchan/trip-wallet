@@ -29,7 +29,7 @@ const TYPE_BADGE: Record<string, string> = {
   other:     'bg-gray-100 text-gray-500',
 };
 
-const emptyItemForm = { title: '', jpy: 0, thb: 0, currency: 'thb' as 'thb' | 'jpy', type: 'transport', desc: '', time: '09:00', image: '', mapUrl: '', guide: '' };
+const emptyItemForm = { title: '', amount: 0, currency: 'thb' as 'thb' | 'jpy', type: 'transport', desc: '', time: '09:00', image: '', mapUrl: '', guide: '' };
 const emptyPlanMainForm = { title: '', date: '', jpy: 0, thb: 0, type: 'activity', desc: '', image: '', mapUrl: '', guide: '' };
 
 const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) => {
@@ -69,9 +69,9 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
   const openEditItem = (item: SummaryItem | ScheduleItem, context: string) => {
     setFormContext(context);
     setEditing(item);
+    const currency: 'thb' | 'jpy' = item.jpy > 0 && item.thb === 0 ? 'jpy' : 'thb';
     setForm({
-      title: item.title, jpy: item.jpy, thb: item.thb,
-      currency: item.jpy > 0 ? 'jpy' : 'thb',
+      title: item.title, amount: currency === 'jpy' ? item.jpy : item.thb, currency,
       type: item.type,
       desc: item.desc || '', time: (item as ScheduleItem).time || '09:00',
       image: item.image || '', mapUrl: item.mapUrl || '', guide: item.guide || '',
@@ -82,17 +82,19 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
 
   const handleSaveItem = () => {
     if (!form.title.trim()) return;
+    const jpy = form.currency === 'jpy' ? form.amount : 0;
+    const thb = form.currency === 'thb' ? form.amount : 0;
     if (formContext === 'summary') {
       const updatedSummary = isNew
-        ? [...plan.summary, { id: 's_' + Date.now(), title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image, mapUrl: form.mapUrl, guide: form.guide } as SummaryItem]
-        : plan.summary.map(i => i.id === editing?.id ? { ...i, ...form } : i);
+        ? [...plan.summary, { id: 's_' + Date.now(), title: form.title, jpy, thb, type: form.type, desc: form.desc, image: form.image, mapUrl: form.mapUrl, guide: form.guide } as SummaryItem]
+        : plan.summary.map(i => i.id === editing?.id ? { ...i, ...form, jpy, thb } : i);
       onPlanUpdate({ ...plan, summary: updatedSummary });
     } else {
       const updatedPlanMains = plan.planMains.map(pm => {
         if (pm.id !== formContext) return pm;
         const updatedSchedules = isNew
-          ? [...pm.schedules, { id: 'sc_' + Date.now(), time: form.time, title: form.title, jpy: form.jpy, thb: form.thb, type: form.type, desc: form.desc, image: form.image, mapUrl: form.mapUrl, guide: form.guide } as ScheduleItem].sort((a, b) => a.time.localeCompare(b.time))
-          : pm.schedules.map(i => i.id === editing?.id ? { ...i, ...form } : i);
+          ? [...pm.schedules, { id: 'sc_' + Date.now(), time: form.time, title: form.title, jpy, thb, type: form.type, desc: form.desc, image: form.image, mapUrl: form.mapUrl, guide: form.guide } as ScheduleItem].sort((a, b) => a.time.localeCompare(b.time))
+          : pm.schedules.map(i => i.id === editing?.id ? { ...i, ...form, jpy, thb } : i);
         return { ...pm, schedules: updatedSchedules };
       });
       onPlanUpdate({ ...plan, planMains: updatedPlanMains });
@@ -154,7 +156,9 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
 
   // --- Render helpers ---
   const renderSummaryRow = (item: SummaryItem) => (
-    <div key={item.id} className="flex items-center gap-4 py-3.5 px-4 rounded-3xl hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-100">
+    <div key={item.id} 
+      onClick={() => openEditItem(item, 'summary')}
+      className="flex items-center gap-4 py-3.5 px-4 rounded-3xl hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-100 cursor-pointer">
       <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${TYPE_BADGE[item.type] || TYPE_BADGE.other}`}>
         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{getIcon(item.type)}</span>
       </div>
@@ -166,14 +170,14 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
         </div>
       </div>
       <div className="text-right shrink-0">
-        <p className="text-[13px] font-black text-japan-red">฿{item.thb.toLocaleString()}</p>
-        {item.jpy > 0 && <p className="text-[9px] font-bold text-gray-400">¥{item.jpy.toLocaleString()}</p>}
+        {item.jpy > 0 && item.thb === 0
+          ? <p className="text-[13px] font-black text-blue-500">¥{item.jpy.toLocaleString()}</p>
+          : <p className="text-[13px] font-black text-japan-red">฿{item.thb.toLocaleString()}</p>}
       </div>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0 shrink-0 ml-1">
-        <button onClick={() => openEditItem(item, 'summary')} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400">
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
-        </button>
-        <button onClick={() => handleDeleteItem(item.id, 'summary')} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-400">
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id, 'summary'); }} 
+          className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-400">
           <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
         </button>
       </div>
@@ -181,7 +185,9 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
   );
 
   const renderScheduleRow = (item: ScheduleItem, pmId: string) => (
-    <div key={item.id} className="flex items-center gap-4 py-3.5 px-4 rounded-3xl hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-100">
+    <div key={item.id} 
+      onClick={() => openEditItem(item, pmId)}
+      className="flex items-center gap-4 py-3.5 px-4 rounded-3xl hover:bg-white hover:shadow-md hover:scale-[1.01] transition-all group border border-transparent hover:border-gray-100 cursor-pointer">
       <div className="flex flex-col items-end shrink-0 w-10">
         <span className="text-[11px] font-black text-secondary leading-none">{item.time}</span>
         <span className="text-[8px] font-bold text-gray-300 uppercase mt-0.5">TIME</span>
@@ -194,14 +200,14 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
         {item.desc && <p className="text-[10px] text-gray-400 truncate mt-0.5">{item.desc}</p>}
       </div>
       <div className="text-right shrink-0">
-        {item.thb > 0 && <p className="text-[13px] font-black text-japan-red">฿{item.thb.toLocaleString()}</p>}
-        {item.jpy > 0 && <p className="text-[9px] font-bold text-gray-400">¥{item.jpy.toLocaleString()}</p>}
+        {item.jpy > 0 && item.thb === 0
+          ? <p className="text-[13px] font-black text-blue-500">¥{item.jpy.toLocaleString()}</p>
+          : <p className="text-[13px] font-black text-japan-red">฿{item.thb.toLocaleString()}</p>}
       </div>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0 shrink-0 ml-1">
-        <button onClick={() => openEditItem(item, pmId)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400">
-          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
-        </button>
-        <button onClick={() => handleDeleteItem(item.id, pmId)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-400">
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id, pmId); }} 
+          className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-red-50 text-red-400">
           <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
         </button>
       </div>
@@ -232,8 +238,8 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-5 pb-32 space-y-3"
-        style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top))' }}>
+      <main className="max-w-2xl mx-auto px-5 pb-32 space-y-4"
+        style={{ paddingTop: 'calc(6.5rem + env(safe-area-inset-top))' }}>
 
         {/* Summary Accordion */}
         <div className="bg-white rounded-4xl shadow-sm overflow-hidden border border-gray-100 card-enter hover:scale-[1.02] hover:shadow-xl hover:shadow-secondary/5 transition-all duration-300">
@@ -280,14 +286,14 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
               style={{ animationDelay: `${(idx + 1) * 0.05}s` }}>
               
               {/* Plan Main Header */}
-              <div className="flex items-center gap-3 px-5 py-4">
+              <div className="flex items-center gap-3 px-5 py-5">
                 <button onClick={() => toggleSection(pm.id)} className="flex items-center gap-4 flex-1 text-left min-w-0 group">
                   <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-black/5 ${TYPE_BADGE[pm.type] || TYPE_BADGE.other}`}>
                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{getIcon(pm.type)}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0" onClick={(e) => { e.stopPropagation(); openEditPlanMain(pm); }}>
                     <div className="flex items-center gap-2">
-                      <p className="font-headline font-extrabold text-[15px] text-secondary truncate">{pm.title}</p>
+                      <p className="font-headline font-extrabold text-[15px] text-secondary truncate group-hover:text-primary transition-colors">{pm.title}</p>
                       {pm.date && (
                         <span className="text-[9px] font-black text-white sakura-gradient px-2 py-0.5 rounded-full shadow-sm shrink-0 uppercase">
                           {pm.date}
@@ -309,9 +315,6 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
                 
                 {/* Plan main action buttons */}
                 <div className="flex gap-1 shrink-0 ml-1">
-                  <button onClick={() => openEditPlanMain(pm)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-400 transition-colors">
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
-                  </button>
                   <button onClick={() => handleDeletePlanMain(pm.id)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-100 text-red-400 transition-colors">
                     <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                   </button>
@@ -416,32 +419,25 @@ const ManagePlan: React.FC<ManagePlanProps> = ({ plan, onBack, onPlanUpdate }) =
                   <div className="flex rounded-2xl bg-gray-50 border border-gray-100 p-1 shrink-0">
                     <button
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, currency: 'thb', jpy: 0 }))}
+                      onClick={() => setForm(f => ({ ...f, currency: 'thb' }))}
                       className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${form.currency === 'thb' ? 'bg-japan-red text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>
                       ฿ THB
                     </button>
                     <button
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, currency: 'jpy', thb: 0 }))}
+                      onClick={() => setForm(f => ({ ...f, currency: 'jpy' }))}
                       className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${form.currency === 'jpy' ? 'bg-blue-500 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>
                       ¥ JPY
                     </button>
                   </div>
-                  {form.currency === 'thb' ? (
-                    <div className="flex-1 flex items-center bg-gray-50 rounded-3xl px-4 py-3.5 border-2 border-transparent transition-all focus-within:bg-white focus-within:border-japan-red">
-                      <span className="font-black text-gray-300 mr-2 text-sm">฿</span>
-                      <input type="number" value={form.thb || ''}
-                        onChange={e => setForm(f => ({ ...f, thb: Number(e.target.value) }))}
-                        className="w-full bg-transparent border-none focus:outline-none text-xl font-headline font-black text-secondary text-right" />
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center bg-gray-50 rounded-3xl px-4 py-3.5 border-2 border-transparent transition-all focus-within:bg-white focus-within:border-blue-500">
-                      <span className="font-black text-gray-300 mr-2 text-sm">¥</span>
-                      <input type="number" value={form.jpy || ''}
-                        onChange={e => setForm(f => ({ ...f, jpy: Number(e.target.value) }))}
-                        className="w-full bg-transparent border-none focus:outline-none text-xl font-headline font-black text-secondary text-right" />
-                    </div>
-                  )}
+                  <div className={`flex-1 flex items-center bg-gray-50 rounded-3xl px-4 py-3.5 border-2 border-transparent transition-all focus-within:bg-white ${form.currency === 'thb' ? 'focus-within:border-japan-red' : 'focus-within:border-blue-500'}`}>
+                    <span className={`font-black mr-2 text-sm ${form.currency === 'thb' ? 'text-japan-red' : 'text-blue-400'}`}>
+                      {form.currency === 'thb' ? '฿' : '¥'}
+                    </span>
+                    <input type="number" value={form.amount || ''}
+                      onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))}
+                      className="w-full bg-transparent border-none focus:outline-none text-xl font-headline font-black text-secondary text-right" />
+                  </div>
                 </div>
               </div>
 

@@ -17,7 +17,7 @@ const BudgetPlanModal: React.FC<BudgetPlanModalProps> = ({ isOpen, onClose, thbP
     setLoading(true);
     setError(false);
     setRate(null);
-    fetch('https://api.frankfurter.app/latest?from=JPY&to=THB')
+    fetch('https://api.frankfurter.dev/v1/latest?from=JPY&to=THB')
       .then(r => r.json())
       .then(data => {
         setRate(data.rates.THB);

@@ -148,7 +148,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       {/* Horizontal Nav - Wrapper for containing negative margins */}
       <div className="overflow-hidden -mx-5 px-5">
         <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3 px-1">Itinerary Schedule</h3>
-        <div className="flex gap-3 overflow-x-auto no-scrollbar pt-1 pb-4">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar pt-3 pb-4">
           <button
             onClick={() => onTabChange('summary')}
             className={`flex flex-col overflow-hidden rounded-2xl min-w-[76px] h-[92px] transition-all border shrink-0 group ${
