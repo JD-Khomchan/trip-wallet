@@ -47,5 +47,5 @@ export default defineConfig({
       },
     }),
   ],
-  base: '/trip-wallet/',
+  base: '/',
 })
